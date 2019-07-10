@@ -88,7 +88,7 @@ class HtmlPublishHelperTest {
         assertThat(content1).contains("<script type=\"text/javascript\" src=\"js/empty.js\"></script>");
 
         String content2 = HtmlPublishHelper.readFile(page2);
-        assertThat(content2).contains("<link rel=\"stylesheet\" type=\"text/css\" href=\"css/page.css\"> ");
+        assertThat(content2).contains("<link rel=\"stylesheet\" type=\"text/css\" href=\"../css/page.css\"> ");
     }
 
 }

@@ -53,6 +53,13 @@ public class HtmlPublishHelper {
         Path inputRelPath = inputFolder.relativize(inputFile);
         Path outputFile = outputFolder.resolve(inputRelPath);
 
+        String relPathToOutputFolder = outputFile.getParent()
+                .relativize(outputFolder)
+                .toString();
+        if (!relPathToOutputFolder.isEmpty()) {
+            relPathToOutputFolder = relPathToOutputFolder + "/";
+        }
+
         String html = readFile(inputFile);
         Document doc = Jsoup.parse(html);
         doc.outputSettings()
@@ -60,9 +67,9 @@ public class HtmlPublishHelper {
 
         try {
             Files.createDirectories(outputFile.getParent());
-            moveAndCopy(doc, inputFile, outputFolder, IMAGES_SUB_PATH, "img", (e) -> true, "src");
-            moveAndCopy(doc, inputFile, outputFolder, CSS_SUB_PATH, "link", (e) -> "stylesheet".equalsIgnoreCase(e.attr("rel")), "href");
-            moveAndCopy(doc, inputFile, outputFolder, JAVASCIPT_SUB_PATH, "script", (e) -> "text/javascript".equalsIgnoreCase(e.attr("type")), "src");
+            moveAndCopy(doc, inputFile, outputFolder, relPathToOutputFolder, IMAGES_SUB_PATH, "img", (e) -> true, "src");
+            moveAndCopy(doc, inputFile, outputFolder, relPathToOutputFolder, CSS_SUB_PATH, "link", (e) -> "stylesheet".equalsIgnoreCase(e.attr("rel")), "href");
+            moveAndCopy(doc, inputFile, outputFolder, relPathToOutputFolder, JAVASCIPT_SUB_PATH, "script", (e) -> "text/javascript".equalsIgnoreCase(e.attr("type")), "src");
         } catch (IOException e) {
             throw new IllegalStateException("Could move file: " + inputFile, e);
         }
@@ -71,7 +78,7 @@ public class HtmlPublishHelper {
         writeFile(outputFile, content);
     }
 
-    private static void moveAndCopy(Document doc, Path inputFile, Path outputFolder, String subPath, String tagName, Function<Element, Boolean> filter, String attributeName) throws IOException {
+    private static void moveAndCopy(Document doc, Path inputFile, Path outputFolder, String relPathToOutputFolder, String subPath, String tagName, Function<Element, Boolean> filter, String attributeName) throws IOException {
         Elements elements = doc.getElementsByTag(tagName);
         for (Element element : elements) {
             if (filter.apply(element)) {
@@ -84,7 +91,7 @@ public class HtmlPublishHelper {
                     if (!Files.exists(fromFile) || !Files.isRegularFile(fromFile)) {
                         fromFile = Paths.get(attr);
                     }
-                    String newSrc = subPath + fromFile.getFileName();
+                    String newSrc = relPathToOutputFolder + subPath + fromFile.getFileName();
                     element.attr(attributeName, newSrc);
                     Path toFile = outputFolder.resolve(subPath)
                             .resolve(fromFile.getFileName());
