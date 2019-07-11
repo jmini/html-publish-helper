@@ -83,7 +83,7 @@ public class HtmlPublishHelper {
         for (Element element : elements) {
             if (filter.apply(element)) {
                 String attr = element.attr(attributeName);
-                if (attr != null && !attr.startsWith("http://") && !attr.startsWith("https://")) {
+                if (attr != null && !attr.isEmpty() && !attr.startsWith("http://") && !attr.startsWith("https://")) {
                     //consider that the attribute is relative to the inputFile:
                     Path fromFile = inputFile.getParent()
                             .resolve(attr);

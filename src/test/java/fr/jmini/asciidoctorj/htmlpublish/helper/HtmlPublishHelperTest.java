@@ -48,6 +48,7 @@ class HtmlPublishHelperTest {
         assertThat(content).contains("<img src=\"images/img.svg\" alt=\"a test svg image\">");
         assertThat(content).contains("<link rel=\"stylesheet\" type=\"text/css\" href=\"css/file.css\">");
         assertThat(content).contains("<script src=\"js/empty.js\"></script>");
+        assertThat(content).doesNotContain("<script src=\"js/\">");
     }
 
     @Test
