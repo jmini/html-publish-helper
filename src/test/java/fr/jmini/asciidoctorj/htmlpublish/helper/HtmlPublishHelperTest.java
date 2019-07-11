@@ -47,7 +47,7 @@ class HtmlPublishHelperTest {
         assertThat(content).contains("<img src=\"images/image.png\" alt=\"a test png image\">");
         assertThat(content).contains("<img src=\"images/img.svg\" alt=\"a test svg image\">");
         assertThat(content).contains("<link rel=\"stylesheet\" type=\"text/css\" href=\"css/file.css\">");
-        assertThat(content).contains("<script type=\"text/javascript\" src=\"js/empty.js\"></script>");
+        assertThat(content).contains("<script src=\"js/empty.js\"></script>");
     }
 
     @Test

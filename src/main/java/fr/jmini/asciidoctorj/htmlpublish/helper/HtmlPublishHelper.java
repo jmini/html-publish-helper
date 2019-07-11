@@ -69,7 +69,7 @@ public class HtmlPublishHelper {
             Files.createDirectories(outputFile.getParent());
             moveAndCopy(doc, inputFile, outputFolder, relPathToOutputFolder, IMAGES_SUB_PATH, "img", (e) -> true, "src");
             moveAndCopy(doc, inputFile, outputFolder, relPathToOutputFolder, CSS_SUB_PATH, "link", (e) -> "stylesheet".equalsIgnoreCase(e.attr("rel")), "href");
-            moveAndCopy(doc, inputFile, outputFolder, relPathToOutputFolder, JAVASCIPT_SUB_PATH, "script", (e) -> "text/javascript".equalsIgnoreCase(e.attr("type")), "src");
+            moveAndCopy(doc, inputFile, outputFolder, relPathToOutputFolder, JAVASCIPT_SUB_PATH, "script", (e) -> true, "src");
         } catch (IOException e) {
             throw new IllegalStateException("Could move file: " + inputFile, e);
         }
