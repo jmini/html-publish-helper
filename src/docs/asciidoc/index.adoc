@@ -58,7 +58,14 @@ outputFolder
     └── empty.js
 ----
 
-To move all the html files of a folder, `HtmlPublishHelper.publishHtmlFolder(inputFolder, outputFolder)` can be used.
+To move all the html files of a folder (and subfolder), `HtmlPublishHelper.publishHtmlFolder(inputFolder, outputFolder)` can be used.
+
+To move specific html files of a folder, `HtmlPublishHelper.publishHtmlFilesInFolder(inputFolder, outputFolder, files)` can be used.
+The `files` argument is a list of sub-path in the `inputFolder`.
+It could be a list containing `"case2/page1.html"` and `"case2/sub/page2.html"` using the same example as before.
+
+You can also use the `files` list to change the sub-path in the output folder using this notation `<sub-path in input>:<sub-path in output>`.
+For example, to publish the two pages of `case2` in a single folder called `folder` inside the output folder, use a list containing: `"case2/page1.html:folder/p1.html"` and `"case2/sub/page2.html:folder/p2.html"` (the pages will also be renamed).
 
 == Source Code
 

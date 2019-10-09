@@ -5,7 +5,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -21,9 +26,9 @@ public class HtmlPublishHelper {
      * Take all HTML files of a folder and sub-folders and publish them to an output folder. Images, CSS and JavaScript resources are moved.
      *
      * @param inputFolder
-     *            root folder where the input HTML file is located.
+     *            root folder where the input HTML files are located.
      * @param outputFolder
-     *            directory where the post-processed HTML file is saved.
+     *            folder where the post-processed HTML files are saved.
      */
     public static void publishHtmlFolder(Path inputFolder, Path outputFolder) {
         try {
@@ -40,6 +45,24 @@ public class HtmlPublishHelper {
     }
 
     /**
+     * Take a list of HTML files in a folder and publish them to an output folder. Images, CSS and JavaScript resources are moved.
+     *
+     * @param inputFolder
+     *            root folder where the input HTML files are located.
+     * @param outputFolder
+     *            folder where the post-processed HTML files are saved.
+     * @param files
+     *            relative path to the root folders. If a <code>:</code> is used, then you can specify different relative path for input and output files.
+     */
+    public static void publishHtmlFilesInFolder(Path inputFolder, Path outputFolder, String... files) {
+        List<PathHolder> fileMappings = Arrays.stream(files)
+                .map(subPath -> toPathHolder(inputFolder, outputFolder, subPath))
+                .collect(Collectors.toList());
+        fileMappings.stream()
+                .forEach(holder -> publishHtmlFile(inputFolder, holder.inputFile, outputFolder, holder.outputFile, fileMappings));
+    }
+
+    /**
      * Take a single HTML file and publish it an output folder. Images, CSS and JavaScript resources are moved.
      *
      * @param inputFolder
@@ -52,7 +75,26 @@ public class HtmlPublishHelper {
     public static void publishHtmlFile(Path inputFolder, Path inputFile, Path outputFolder) {
         Path inputRelPath = inputFolder.relativize(inputFile);
         Path outputFile = outputFolder.resolve(inputRelPath);
+        publishHtmlFile(inputFolder, inputFile, outputFolder, outputFile);
+    }
 
+    /**
+     * Take a single HTML file and publish it an output folder. Images, CSS and JavaScript resources are moved.
+     *
+     * @param inputFolder
+     *            root folder where the input HTML file is located.
+     * @param inputFile
+     *            input HTML that is published.
+     * @param outputFolder
+     *            directory where the post-processed HTML file is saved.
+     * @param outputFile
+     *            output HTML file.
+     */
+    public static void publishHtmlFile(Path inputFolder, Path inputFile, Path outputFolder, Path outputFile) {
+        publishHtmlFile(inputFolder, inputFile, outputFolder, outputFile, Collections.singletonList(new PathHolder(inputFile, outputFile)));
+    }
+
+    private static void publishHtmlFile(Path inputFolder, Path inputFile, Path outputFolder, Path outputFile, List<PathHolder> fileMappings) {
         String relPathToOutputFolder = outputFile.getParent()
                 .relativize(outputFolder)
                 .toString();
@@ -74,6 +116,14 @@ public class HtmlPublishHelper {
             throw new IllegalStateException("Could move file: " + inputFile, e);
         }
 
+        Path inputRelPath = inputFolder.getParent()
+                .relativize(inputFile);
+        Path outputRelPath = outputFolder.getParent()
+                .relativize(outputFile);
+        if (!Objects.equals(inputRelPath, outputRelPath)) {
+            rewriteLinks(doc, inputFolder, inputFile, outputFolder, outputFile, fileMappings);
+        }
+
         String content = doc.toString();
         writeFile(outputFile, content);
     }
@@ -91,8 +141,8 @@ public class HtmlPublishHelper {
                     if (!Files.exists(fromFile) || !Files.isRegularFile(fromFile)) {
                         fromFile = Paths.get(attr);
                     }
-                    String newSrc = relPathToOutputFolder + subPath + fromFile.getFileName();
-                    element.attr(attributeName, newSrc);
+                    String newAttr = relPathToOutputFolder + subPath + fromFile.getFileName();
+                    element.attr(attributeName, newAttr);
                     Path toFile = outputFolder.resolve(subPath)
                             .resolve(fromFile.getFileName());
                     if (Files.isRegularFile(fromFile)) {
@@ -104,6 +154,47 @@ public class HtmlPublishHelper {
                         System.err.println("File '" + fromFile + "' is missing");
                     }
                 }
+            }
+        }
+    }
+
+    private static void rewriteLinks(Document doc, Path inputFolder, Path inputFile, Path outputFolder, Path outputFile, List<PathHolder> fileMappings) {
+        Elements elements = doc.getElementsByTag("a");
+        for (Element element : elements) {
+            String attr = element.attr("href");
+            if (attr != null && !attr.isEmpty() && !attr.startsWith("http://") && !attr.startsWith("https://") && !attr.startsWith("file:")) {
+                //consider that the attribute is relative to the inputFile:
+                Path inputTargetFile = inputFile.getParent()
+                        .resolve(attr)
+                        .normalize()
+                        .toAbsolutePath();
+
+                Path inputFolderAbsolute = inputFolder.normalize()
+                        .toAbsolutePath();
+
+                //corresponding file:
+                Path outputTargetFile = fileMappings.stream()
+                        .filter(h -> {
+                            Path absolutePath = h.getInputFile()
+                                    .normalize()
+                                    .toAbsolutePath();
+                            return Objects.equals(absolutePath, inputTargetFile);
+                        })
+                        .findAny()
+                        .map(PathHolder::getOutputFile)
+                        .orElseGet(() -> {
+                            //relative path to the input Folder:
+                            Path inputRelPath = inputFolderAbsolute.relativize(inputTargetFile);
+
+                            //corresponding location in the output folder:
+                            return outputFolder.resolve(inputRelPath);
+                        });
+
+                //relative path to the outFile is the new value for href:
+                String newAttr = outputFile.getParent()
+                        .relativize(outputTargetFile)
+                        .toString();
+                element.attr("href", newAttr);
             }
         }
     }
@@ -123,6 +214,38 @@ public class HtmlPublishHelper {
             Files.write(file, content.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new IllegalStateException("Could not write file: " + file, e);
+        }
+    }
+
+    static PathHolder toPathHolder(Path inputFolder, Path outputFolder, String subPath) {
+        String inputSubPath;
+        String outputSubPath;
+        int index = subPath.indexOf(':');
+        if (index > -1) {
+            inputSubPath = subPath.substring(0, index);
+            outputSubPath = subPath.substring(index + 1);
+        } else {
+            inputSubPath = subPath;
+            outputSubPath = subPath;
+        }
+        return new PathHolder(inputFolder.resolve(inputSubPath), outputFolder.resolve(outputSubPath));
+    }
+
+    static class PathHolder {
+        private Path inputFile;
+        private Path outputFile;
+
+        public PathHolder(Path inputFile, Path outputFile) {
+            this.inputFile = inputFile;
+            this.outputFile = outputFile;
+        }
+
+        public Path getInputFile() {
+            return inputFile;
+        }
+
+        public Path getOutputFile() {
+            return outputFile;
         }
     }
 
