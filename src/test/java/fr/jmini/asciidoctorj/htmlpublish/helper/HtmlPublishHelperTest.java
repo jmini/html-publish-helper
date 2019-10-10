@@ -5,9 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import fr.jmini.asciidoctorj.htmlpublish.helper.HtmlPublishHelper.HrefHolder;
 import fr.jmini.asciidoctorj.htmlpublish.helper.HtmlPublishHelper.PathHolder;
 
 class HtmlPublishHelperTest {
@@ -52,7 +55,12 @@ class HtmlPublishHelperTest {
         assertThat(content).contains("<script src=\"js/empty.js\"></script>");
         assertThat(content).doesNotContain("<script src=\"js/\">");
         assertThat(content).contains("<img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==\" alt=\"Red dot\">");
-        assertThat(content).contains("<a href=\"folder/page.html\">Other page</a>");
+        assertThat(content).contains("<a href=\"folder/external.html\">ext page</a>");
+        assertThat(content).contains("<a href=\"folder/external.html#top\">top section</a>");
+        assertThat(content).contains("<a href=\"references/\">references</a>");
+        assertThat(content).contains("<a href=\"references/#property\">referenced property</a>");
+        assertThat(content).contains("<a href=\"references/private.html\">private references</a>");
+        assertThat(content).contains("<a href=\"#title\">this page</a>");
     }
 
     @Test
@@ -95,13 +103,23 @@ class HtmlPublishHelperTest {
         assertThat(content).contains("<script src=\"../js/empty.js\"></script>");
         assertThat(content).doesNotContain("<script src=\"js/\">");
         assertThat(content).contains("<img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==\" alt=\"Red dot\">");
-        assertThat(content).contains("<a href=\"../folder/page.html\">Other page</a>");
+        assertThat(content).contains("<a href=\"../folder/external.html\">ext page</a>");
+        assertThat(content).contains("<a href=\"../folder/external.html#top\">top section</a>");
+        assertThat(content).contains("<a href=\"../references/\">references</a>");
+        assertThat(content).contains("<a href=\"../references/#property\">referenced property</a>");
+        assertThat(content).contains("<a href=\"../references/private.html\">private references</a>");
+        assertThat(content).contains("<a href=\"#title\">this page</a>");
     }
 
     @Test
     void testCase1ToFolderFile() throws Exception {
         Path outputFolder = Files.createTempDirectory("test");
-        HtmlPublishHelper.publishHtmlFile(CASE1_FOLDER, CASE1_FILE, outputFolder, outputFolder.resolve("folder/index.html"));
+        Path outputFile = outputFolder.resolve("folder/page.html");
+        List<PathHolder> fileMappings = Arrays.asList(
+                new PathHolder(CASE1_FILE, outputFile),
+                new PathHolder(CASE1_FOLDER.resolve("references/index.html"), outputFolder.resolve("folder/index.html")),
+                new PathHolder(CASE1_FOLDER.resolve("references/private.html"), outputFolder.resolve("folder/p.html")));
+        HtmlPublishHelper.publishHtmlFile(CASE1_FOLDER, CASE1_FILE, outputFolder, outputFile, fileMappings);
 
         // expected tree:
         // outputFolder
@@ -118,7 +136,7 @@ class HtmlPublishHelperTest {
         assertThat(outputFolder).isDirectory();
         Path indexFile = outputFolder.resolve("index.html");
         assertThat(indexFile).doesNotExist();
-        Path pageFile = outputFolder.resolve("folder/index.html");
+        Path pageFile = outputFolder.resolve("folder/page.html");
         assertThat(pageFile).isRegularFile();
         Path css = outputFolder.resolve("css");
         assertThat(css).isDirectory();
@@ -138,13 +156,23 @@ class HtmlPublishHelperTest {
         assertThat(content).contains("<script src=\"../js/empty.js\"></script>");
         assertThat(content).doesNotContain("<script src=\"js/\">");
         assertThat(content).contains("<img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==\" alt=\"Red dot\">");
-        assertThat(content).contains("<a href=\"page.html\">Other page</a>");
+        assertThat(content).contains("<a href=\"external.html\">ext page</a>");
+        assertThat(content).contains("<a href=\"external.html#top\">top section</a>");
+        assertThat(content).contains("<a href=\"index.html\">references</a>");
+        assertThat(content).contains("<a href=\"index.html#property\">referenced property</a>");
+        assertThat(content).contains("<a href=\"p.html\">private references</a>");
+        assertThat(content).contains("<a href=\"#title\">this page</a>");
     }
 
     @Test
     void testCase1ToSubOtherFile() throws Exception {
         Path outputFolder = Files.createTempDirectory("test");
-        HtmlPublishHelper.publishHtmlFile(CASE1_FOLDER, CASE1_FILE, outputFolder, outputFolder.resolve("sub/other/page.html"));
+        Path outputFile = outputFolder.resolve("sub/other/page.html");
+        List<PathHolder> fileMappings = Arrays.asList(
+                new PathHolder(CASE1_FILE, outputFile),
+                new PathHolder(CASE1_FOLDER.resolve("references/index.html"), outputFolder.resolve("ref/ref.html")),
+                new PathHolder(CASE1_FOLDER.resolve("references/private.html"), outputFolder.resolve("sub/private/ref.html")));
+        HtmlPublishHelper.publishHtmlFile(CASE1_FOLDER, CASE1_FILE, outputFolder, outputFile, fileMappings);
 
         // expected tree:
         // outputFolder
@@ -162,7 +190,7 @@ class HtmlPublishHelperTest {
         assertThat(outputFolder).isDirectory();
         Path indexFile = outputFolder.resolve("index.html");
         assertThat(indexFile).doesNotExist();
-        Path pageFile = outputFolder.resolve("sub/other/page.html");
+        Path pageFile = outputFile;
         assertThat(pageFile).isRegularFile();
         Path css = outputFolder.resolve("css");
         assertThat(css).isDirectory();
@@ -182,7 +210,12 @@ class HtmlPublishHelperTest {
         assertThat(content).contains("<script src=\"../../js/empty.js\"></script>");
         assertThat(content).doesNotContain("<script src=\"js/\">");
         assertThat(content).contains("<img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==\" alt=\"Red dot\">");
-        assertThat(content).contains("<a href=\"../../folder/page.html\">Other page</a>");
+        assertThat(content).contains("<a href=\"../../folder/external.html\">ext page</a>");
+        assertThat(content).contains("<a href=\"../../folder/external.html#top\">top section</a>");
+        assertThat(content).contains("<a href=\"../../ref/ref.html\">references</a>");
+        assertThat(content).contains("<a href=\"../../ref/ref.html#property\">referenced property</a>");
+        assertThat(content).contains("<a href=\"../private/ref.html\">private references</a>");
+        assertThat(content).contains("<a href=\"#title\">this page</a>");
     }
 
     @Test
@@ -289,5 +322,28 @@ class HtmlPublishHelperTest {
         PathHolder holder2 = HtmlPublishHelper.toPathHolder(inputFolder, outputFolder, "page.html:index.html");
         assertThat(holder2.getInputFile()).isEqualTo(inputFolder.resolve("page.html"));
         assertThat(holder2.getOutputFile()).isEqualTo(outputFolder.resolve("index.html"));
+    }
+
+    @Test
+    void testToHrefHolder() throws Exception {
+        HrefHolder holder1 = HtmlPublishHelper.toHrefHolder("folder/page.html#anchor");
+        assertThat(holder1.getPath()).isEqualTo("folder/page.html");
+        assertThat(holder1.getAnchor()).isEqualTo("#anchor");
+
+        HrefHolder holder2 = HtmlPublishHelper.toHrefHolder("folder/page.html");
+        assertThat(holder2.getPath()).isEqualTo("folder/page.html");
+        assertThat(holder2.getAnchor()).isNull();
+
+        HrefHolder holder3 = HtmlPublishHelper.toHrefHolder("folder/page.html#");
+        assertThat(holder3.getPath()).isEqualTo("folder/page.html");
+        assertThat(holder3.getAnchor()).isEqualTo("#");
+
+        HrefHolder holder4 = HtmlPublishHelper.toHrefHolder("");
+        assertThat(holder4.getPath()).isEqualTo("");
+        assertThat(holder4.getAnchor()).isNull();
+
+        HrefHolder holder5 = HtmlPublishHelper.toHrefHolder("#section");
+        assertThat(holder5.getPath()).isEqualTo("");
+        assertThat(holder5.getAnchor()).isEqualTo("#section");
     }
 }

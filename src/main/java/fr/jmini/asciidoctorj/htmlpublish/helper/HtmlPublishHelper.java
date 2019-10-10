@@ -94,7 +94,7 @@ public class HtmlPublishHelper {
         publishHtmlFile(inputFolder, inputFile, outputFolder, outputFile, Collections.singletonList(new PathHolder(inputFile, outputFile)));
     }
 
-    private static void publishHtmlFile(Path inputFolder, Path inputFile, Path outputFolder, Path outputFile, List<PathHolder> fileMappings) {
+    static void publishHtmlFile(Path inputFolder, Path inputFile, Path outputFolder, Path outputFile, List<PathHolder> fileMappings) {
         String relPathToOutputFolder = outputFile.getParent()
                 .relativize(outputFolder)
                 .toString();
@@ -158,43 +158,56 @@ public class HtmlPublishHelper {
         }
     }
 
-    private static void rewriteLinks(Document doc, Path inputFolder, Path inputFile, Path outputFolder, Path outputFile, List<PathHolder> fileMappings) {
+    static void rewriteLinks(Document doc, Path inputFolder, Path inputFile, Path outputFolder, Path outputFile, List<PathHolder> fileMappings) {
         Elements elements = doc.getElementsByTag("a");
         for (Element element : elements) {
             String attr = element.attr("href");
             if (attr != null && !attr.isEmpty() && !attr.startsWith("http://") && !attr.startsWith("https://") && !attr.startsWith("file:")) {
-                //consider that the attribute is relative to the inputFile:
-                Path inputTargetFile = inputFile.getParent()
-                        .resolve(attr)
-                        .normalize()
-                        .toAbsolutePath();
+                HrefHolder href = toHrefHolder(attr);
+                if (!href.getPath()
+                        .isEmpty()) {
+                    boolean implicitIndex = href.getPath()
+                            .endsWith("/");
 
-                Path inputFolderAbsolute = inputFolder.normalize()
-                        .toAbsolutePath();
+                    //consider that the attribute is relative to the inputFile:
+                    Path inputTargetFile = inputFile.getParent()
+                            .resolve(href.getPath() + (implicitIndex ? "index.html" : ""))
+                            .normalize()
+                            .toAbsolutePath();
 
-                //corresponding file:
-                Path outputTargetFile = fileMappings.stream()
-                        .filter(h -> {
-                            Path absolutePath = h.getInputFile()
-                                    .normalize()
-                                    .toAbsolutePath();
-                            return Objects.equals(absolutePath, inputTargetFile);
-                        })
-                        .findAny()
-                        .map(PathHolder::getOutputFile)
-                        .orElseGet(() -> {
-                            //relative path to the input Folder:
-                            Path inputRelPath = inputFolderAbsolute.relativize(inputTargetFile);
+                    Path inputFolderAbsolute = inputFolder.normalize()
+                            .toAbsolutePath();
 
-                            //corresponding location in the output folder:
-                            return outputFolder.resolve(inputRelPath);
-                        });
+                    //corresponding file:
+                    Path outputTargetFile = fileMappings.stream()
+                            .filter(h -> {
+                                Path absolutePath = h.getInputFile()
+                                        .normalize()
+                                        .toAbsolutePath();
+                                return Objects.equals(absolutePath, inputTargetFile);
+                            })
+                            .findAny()
+                            .map(PathHolder::getOutputFile)
+                            .orElseGet(() -> {
+                                //relative path to the input Folder:
+                                Path inputRelPath = inputFolderAbsolute.relativize(inputTargetFile);
 
-                //relative path to the outFile is the new value for href:
-                String newAttr = outputFile.getParent()
-                        .relativize(outputTargetFile)
-                        .toString();
-                element.attr("href", newAttr);
+                                //corresponding location in the output folder:
+                                return outputFolder.resolve(inputRelPath);
+                            });
+
+                    //relative path to the outFile is the new value for href:
+                    String newAttr = outputFile.getParent()
+                            .relativize(outputTargetFile)
+                            .toString();
+                    if (implicitIndex && newAttr.endsWith("/index.html")) {
+                        newAttr = newAttr.substring(0, newAttr.length() - "index.html".length());
+                    }
+                    if (href.getAnchor() != null) {
+                        newAttr = newAttr + href.getAnchor();
+                    }
+                    element.attr("href", newAttr);
+                }
             }
         }
     }
@@ -246,6 +259,39 @@ public class HtmlPublishHelper {
 
         public Path getOutputFile() {
             return outputFile;
+        }
+    }
+
+    static HrefHolder toHrefHolder(String href) {
+        String fileName;
+        String anchor;
+        int index = href.lastIndexOf('#');
+        if (index > -1) {
+            fileName = href.substring(0, index);
+            anchor = href.substring(index);
+        } else {
+            fileName = href;
+            anchor = null;
+        }
+        return new HrefHolder(fileName, anchor);
+    }
+
+    static class HrefHolder {
+        private String path;
+        private String anchor;
+
+        public HrefHolder(String path, String anchor) {
+            super();
+            this.path = path;
+            this.anchor = anchor;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public String getAnchor() {
+            return anchor;
         }
     }
 
