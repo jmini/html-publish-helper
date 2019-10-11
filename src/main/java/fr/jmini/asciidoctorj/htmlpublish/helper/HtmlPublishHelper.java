@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -33,11 +34,7 @@ public class HtmlPublishHelper {
     public static void publishHtmlFolder(Path inputFolder, Path outputFolder) {
         try {
             Files.walk(inputFolder)
-                    .filter(f -> f.toFile()
-                            .isFile()
-                            && f.toFile()
-                                    .getName()
-                                    .endsWith("html"))
+                    .filter(f -> isHtmlFile(f))
                     .forEach(f -> publishHtmlFile(inputFolder, f, outputFolder));
         } catch (IOException e) {
             System.err.println("Could not walk through '" + inputFolder + "'.");
@@ -51,12 +48,13 @@ public class HtmlPublishHelper {
      *            root folder where the input HTML files are located.
      * @param outputFolder
      *            folder where the post-processed HTML files are saved.
-     * @param files
+     * @param items
      *            relative path to the root folders. If a <code>:</code> is used, then you can specify different relative path for input and output files.
      */
-    public static void publishHtmlFilesInFolder(Path inputFolder, Path outputFolder, String... files) {
-        List<PathHolder> fileMappings = Arrays.stream(files)
+    public static void publishHtmlFilesInFolder(Path inputFolder, Path outputFolder, String... items) {
+        List<PathHolder> fileMappings = Arrays.stream(items)
                 .map(subPath -> toPathHolder(inputFolder, outputFolder, subPath))
+                .flatMap(HtmlPublishHelper::walkThroughFolder)
                 .collect(Collectors.toList());
         fileMappings.stream()
                 .forEach(holder -> publishHtmlFile(inputFolder, holder.inputFile, outputFolder, holder.outputFile, fileMappings));
@@ -73,9 +71,8 @@ public class HtmlPublishHelper {
      *            directory where the post-processed HTML file is saved.
      */
     public static void publishHtmlFile(Path inputFolder, Path inputFile, Path outputFolder) {
-        Path inputRelPath = inputFolder.relativize(inputFile);
-        Path outputFile = outputFolder.resolve(inputRelPath);
-        publishHtmlFile(inputFolder, inputFile, outputFolder, outputFile);
+        PathHolder holder = createHolder(inputFolder, inputFile, outputFolder);
+        publishHtmlFile(inputFolder, holder.getInputFile(), outputFolder, holder.getOutputFile(), Collections.singletonList(holder));
     }
 
     /**
@@ -242,6 +239,36 @@ public class HtmlPublishHelper {
             outputSubPath = subPath;
         }
         return new PathHolder(inputFolder.resolve(inputSubPath), outputFolder.resolve(outputSubPath));
+    }
+
+    private static Stream<PathHolder> walkThroughFolder(PathHolder holder) {
+        if (Files.isRegularFile(holder.getInputFile())) {
+            return Stream.of(holder);
+        }
+        if (Files.isDirectory(holder.getInputFile())) {
+            try {
+                return Files.walk(holder.getInputFile())
+                        .filter(f -> isHtmlFile(f))
+                        .map(f -> createHolder(holder.getInputFile(), f, holder.getOutputFile()));
+            } catch (IOException e) {
+                throw new IllegalStateException("Could not walk through '" + holder.getInputFile() + "'.", e);
+            }
+        }
+        throw new IllegalStateException("Could not find '" + holder.getInputFile() + "'.");
+    }
+
+    private static boolean isHtmlFile(Path path) {
+        return path.toFile()
+                .isFile()
+                && path.toFile()
+                        .getName()
+                        .endsWith("html");
+    }
+
+    private static PathHolder createHolder(Path inputFolder, Path inputFile, Path outputFolder) {
+        Path inputRelPath = inputFolder.relativize(inputFile);
+        Path outputFile = outputFolder.resolve(inputRelPath);
+        return new PathHolder(inputFile, outputFile);
     }
 
     static class PathHolder {
