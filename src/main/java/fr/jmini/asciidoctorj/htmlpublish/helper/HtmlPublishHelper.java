@@ -113,13 +113,7 @@ public class HtmlPublishHelper {
             throw new IllegalStateException("Could move file: " + inputFile, e);
         }
 
-        Path inputRelPath = inputFolder.getParent()
-                .relativize(inputFile);
-        Path outputRelPath = outputFolder.getParent()
-                .relativize(outputFile);
-        if (!Objects.equals(inputRelPath, outputRelPath)) {
-            rewriteLinks(doc, inputFolder, inputFile, outputFolder, outputFile, fileMappings);
-        }
+        rewriteLinks(doc, inputFolder, inputFile, outputFolder, outputFile, fileMappings);
 
         String content = doc.toString();
         writeFile(outputFile, content);

@@ -359,6 +359,51 @@ class HtmlPublishHelperTest {
     }
 
     @Test
+    void testCase2ReworkOutputTreeEnsureRewrittenLinks() throws Exception {
+        Path outputFolder = Files.createTempDirectory("test");
+        HtmlPublishHelper.publishHtmlFilesInFolder(CASE2_FOLDER, outputFolder, "page1.html:p1.html", "sub/page2.html");
+
+        // expected tree:
+        // outputFolder
+        // ├── css
+        // │   └── page.css
+        // ├── images
+        // │   └── img.svg
+        // ├── js
+        // │   └── empty.js
+        // ├── p1.html
+        // └── sub
+        //     └── page2.html
+
+        assertThat(outputFolder).isDirectory();
+        Path page1 = outputFolder.resolve("page1.html");
+        assertThat(page1).doesNotExist();
+        Path p1 = outputFolder.resolve("p1.html");
+        assertThat(p1).isRegularFile();
+        Path page2 = outputFolder.resolve("sub")
+                .resolve("page2.html");
+        assertThat(page2).isRegularFile();
+        Path css = outputFolder.resolve("css");
+        assertThat(css).isDirectory();
+        assertThat(css.resolve("page.css")).isRegularFile();
+        Path images = outputFolder.resolve("images");
+        assertThat(images).isDirectory();
+        assertThat(images.resolve("img.svg")).isRegularFile();
+        Path js = outputFolder.resolve("js");
+        assertThat(js).isDirectory();
+        assertThat(js.resolve("empty.js")).isRegularFile();
+
+        String content1 = HtmlPublishHelper.readFile(p1);
+        assertThat(content1).contains("<p><img src=\"images/img.svg\" alt=\"a test image\"></p>");
+        assertThat(content1).contains("<script type=\"text/javascript\" src=\"js/empty.js\"></script>");
+        assertThat(content1).contains("<a href=\"sub/page2.html\">Page 2</a>");
+
+        String content2 = HtmlPublishHelper.readFile(page2);
+        assertThat(content2).contains("<link rel=\"stylesheet\" type=\"text/css\" href=\"../css/page.css\"> ");
+        assertThat(content2).contains("<a href=\"../p1.html\">Page 1</a>");
+    }
+
+    @Test
     void testToPathHolder() throws Exception {
         Path inputFolder = Paths.get("input");
         Path outputFolder = Paths.get("output");
