@@ -528,8 +528,8 @@ table.CodeRay td.code>pre{padding:0}
 <h1>HtmlPublish Helper</h1>
 <div class="details">
 <span id="author" class="author">Jeremie Bresson</span><br>
-<span id="revnumber">version 1.0.3,</span>
-<span id="revdate">2019-07-11</span>
+<span id="revnumber">version 1.1.0,</span>
+<span id="revdate">2019-10-13</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -635,7 +635,20 @@ You will get the html rewritten with the resources moved in appropriate sub-fold
 </div>
 </div>
 <div class="paragraph">
-<p>To move all the html files of a folder, <code>HtmlPublishHelper.publishHtmlFolder(inputFolder, outputFolder)</code> can be used.</p>
+<p>To move all the html files of a folder (and subfolder), <code>HtmlPublishHelper.publishHtmlFolder(inputFolder, outputFolder)</code> can be used.</p>
+</div>
+<div class="paragraph">
+<p>To move specific html files of a folder, <code>HtmlPublishHelper.publishHtmlFilesInFolder(inputFolder, outputFolder, items)</code> can be used.
+The <code>items</code> argument is a list of sub-path in the <code>inputFolder</code>.
+It could be a list containing <code>"case2/page1.html"</code> and <code>"case2/sub/page2.html"</code> using the same example as before.</p>
+</div>
+<div class="paragraph">
+<p>You can also use the <code>items</code> list to change the sub-path in the output folder using this notation <code>&lt;sub-path in input&gt;:&lt;sub-path in output&gt;</code>.
+For example, to publish the two pages of <code>case2</code> in a single folder called <code>folder</code> inside the output folder, use a list containing: <code>"case2/page1.html:folder/p1.html"</code> and <code>"case2/sub/page2.html:folder/p2.html"</code> (the links inside the pages will also be renamed).</p>
+</div>
+<div class="paragraph">
+<p>The element in <code>items</code> can also be a folder or a pair of folders (if you want to change the name in the output).
+In this case all <code>*.html</code> files will be considered.</p>
 </div>
 </div>
 </div>
@@ -688,7 +701,7 @@ You will get the html rewritten with the resources moved in appropriate sub-fold
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>./gradlew publishToNexus</pre>
+<pre>./gradlew publishToSonatype</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -757,8 +770,8 @@ ssh-add ~/.ssh/id_rsa</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.0.3<br>
-Last updated 2019-05-17 15:07:04 CEST
+Version 1.1.0<br>
+Last updated 2019-10-11 07:57:50 CEST
 </div>
 </div>
 </body>
