@@ -153,7 +153,7 @@ public class HtmlPublishHelper {
         Elements elements = doc.getElementsByTag("a");
         for (Element element : elements) {
             String attr = element.attr("href");
-            if (attr != null && !attr.isEmpty() && !attr.startsWith("http://") && !attr.startsWith("https://") && !attr.startsWith("file:")) {
+            if (attr != null && !attr.isEmpty() && !attr.startsWith("http://") && !attr.startsWith("https://") && !attr.startsWith("file:") && !attr.startsWith("mailto:")) {
                 HrefHolder href = toHrefHolder(attr);
                 if (!href.getPath()
                         .isEmpty()) {

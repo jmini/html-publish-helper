@@ -64,6 +64,7 @@ class HtmlPublishHelperTest {
         assertThat(content).contains("<a href=\"http://github.com/jmini\">");
         assertThat(content).contains("<a href=\"https://github.com/jmini\">");
         assertThat(content).contains("<a href=\"file:///tmp/file.txt\">file.txt</a>");
+        assertThat(content).contains("<a href=\"mailto:info@company.com\">");
     }
 
     @Test
