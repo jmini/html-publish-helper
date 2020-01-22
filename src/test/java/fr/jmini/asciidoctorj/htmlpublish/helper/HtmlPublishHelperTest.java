@@ -61,6 +61,9 @@ class HtmlPublishHelperTest {
         assertThat(content).contains("<a href=\"references/#property\">referenced property</a>");
         assertThat(content).contains("<a href=\"references/private.html\">private references</a>");
         assertThat(content).contains("<a href=\"#title\">this page</a>");
+        assertThat(content).contains("<a href=\"http://github.com/jmini\">");
+        assertThat(content).contains("<a href=\"https://github.com/jmini\">");
+        assertThat(content).contains("<a href=\"file:///tmp/file.txt\">file.txt</a>");
     }
 
     @Test
