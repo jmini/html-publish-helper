@@ -124,7 +124,7 @@ public class HtmlPublishHelper {
         for (Element element : elements) {
             if (filter.apply(element)) {
                 String attr = element.attr(attributeName);
-                if (attr != null && !attr.isEmpty() && !attr.startsWith("http://") && !attr.startsWith("https://") && !attr.startsWith("data")) {
+                if (attr != null && !attr.isEmpty() && !isUrlAbsolute(attr)) {
                     //consider that the attribute is relative to the inputFile:
                     Path fromFile = inputFile.getParent()
                             .resolve(attr);
@@ -147,6 +147,10 @@ public class HtmlPublishHelper {
                 }
             }
         }
+    }
+
+    static boolean isUrlAbsolute(String url) {
+        return url.matches("(?:^[a-z][a-z0-9+.-]*:|\\/\\/).+");
     }
 
     static void rewriteLinks(Document doc, Path inputFolder, Path inputFile, Path outputFolder, Path outputFile, List<PathHolder> fileMappings) {

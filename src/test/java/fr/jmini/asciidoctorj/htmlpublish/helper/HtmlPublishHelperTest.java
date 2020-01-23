@@ -443,4 +443,19 @@ class HtmlPublishHelperTest {
         assertThat(holder5.getPath()).isEqualTo("");
         assertThat(holder5.getAnchor()).isEqualTo("#section");
     }
+
+    @Test
+    void testIsUrlAbsolute() throws Exception {
+        assertThat(HtmlPublishHelper.isUrlAbsolute("https://example.com")).isTrue();
+        assertThat(HtmlPublishHelper.isUrlAbsolute("https://example.com/test/index.html")).isTrue();
+        assertThat(HtmlPublishHelper.isUrlAbsolute("http://test.example.com")).isTrue();
+        assertThat(HtmlPublishHelper.isUrlAbsolute("//example.com")).isTrue();
+        assertThat(HtmlPublishHelper.isUrlAbsolute("//example.com/test/index.html")).isTrue();
+        assertThat(HtmlPublishHelper.isUrlAbsolute("ftp://ftp.example.com")).isTrue();
+        assertThat(HtmlPublishHelper.isUrlAbsolute("mailto:info@test.com")).isTrue();
+        assertThat(HtmlPublishHelper.isUrlAbsolute("vscode:/file/tmp/file.txt")).isTrue();
+
+        assertThat(HtmlPublishHelper.isUrlAbsolute("test/index.html")).isFalse();
+        assertThat(HtmlPublishHelper.isUrlAbsolute("/test/index.html")).isFalse();
+    }
 }
