@@ -149,15 +149,11 @@ public class HtmlPublishHelper {
         }
     }
 
-    static boolean isUrlAbsolute(String url) {
-        return url.matches("(?:^[a-z][a-z0-9+.-]*:|\\/\\/).+");
-    }
-
     static void rewriteLinks(Document doc, Path inputFolder, Path inputFile, Path outputFolder, Path outputFile, List<PathHolder> fileMappings) {
         Elements elements = doc.getElementsByTag("a");
         for (Element element : elements) {
             String attr = element.attr("href");
-            if (attr != null && !attr.isEmpty() && !attr.startsWith("http://") && !attr.startsWith("https://") && !attr.startsWith("file:") && !attr.startsWith("mailto:")) {
+            if (attr != null && !attr.isEmpty() && !isUrlAbsolute(attr)) {
                 HrefHolder href = toHrefHolder(attr);
                 if (!href.getPath()
                         .isEmpty()) {
@@ -205,6 +201,10 @@ public class HtmlPublishHelper {
                 }
             }
         }
+    }
+
+    static boolean isUrlAbsolute(String url) {
+        return url.matches("(?:^[a-z][a-z0-9+.-]*:|\\/\\/).+");
     }
 
     static String readFile(Path file) {
