@@ -14,9 +14,10 @@ import fr.jmini.asciidoctorj.htmlpublish.helper.HtmlPublishHelper.HrefHolder;
 import fr.jmini.asciidoctorj.htmlpublish.helper.HtmlPublishHelper.PathHolder;
 
 class HtmlPublishHelperTest {
-    private static final Path CASE1_FOLDER = Paths.get("src/test/resources/input/case1");
+    private static final Path INPUT_FOLDER = Paths.get("src/test/resources/input");
+    private static final Path CASE1_FOLDER = INPUT_FOLDER.resolve("case1");
     private static final Path CASE1_FILE = CASE1_FOLDER.resolve("index.html");
-    private static final Path CASE2_FOLDER = Paths.get("src/test/resources/input/case2/");
+    private static final Path CASE2_FOLDER = INPUT_FOLDER.resolve("case2");
 
     @Test
     void testCase1() throws Exception {
@@ -457,5 +458,20 @@ class HtmlPublishHelperTest {
 
         assertThat(HtmlPublishHelper.isUrlAbsolute("test/index.html")).isFalse();
         assertThat(HtmlPublishHelper.isUrlAbsolute("/test/index.html")).isFalse();
+    }
+
+    @Test
+    void testListFiles() throws Exception {
+        assertThat(HtmlPublishHelper.listHtmlFiles(CASE1_FOLDER)).containsExactly("index.html");
+
+        assertThat(HtmlPublishHelper.listHtmlFiles(CASE2_FOLDER)).containsExactly("page1.html", "sub/page2.html");
+        assertThat(HtmlPublishHelper.listHtmlFiles(CASE2_FOLDER, "page1.html")).containsExactly("page1.html");
+        assertThat(HtmlPublishHelper.listHtmlFiles(CASE2_FOLDER, "sub")).containsExactly("sub/page2.html");
+        assertThat(HtmlPublishHelper.listHtmlFiles(CASE2_FOLDER, "sub/page2.html")).containsExactly("sub/page2.html");
+
+        assertThat(HtmlPublishHelper.listHtmlFiles(INPUT_FOLDER)).containsExactly("case1/index.html", "case2/page1.html", "case2/sub/page2.html");
+        assertThat(HtmlPublishHelper.listHtmlFiles(INPUT_FOLDER, "case1", "case2")).containsExactly("case1/index.html", "case2/page1.html", "case2/sub/page2.html");
+        assertThat(HtmlPublishHelper.listHtmlFiles(INPUT_FOLDER, "case1")).containsExactly("case1/index.html");
+        assertThat(HtmlPublishHelper.listHtmlFiles(INPUT_FOLDER, "case2")).containsExactly("case2/page1.html", "case2/sub/page2.html");
     }
 }

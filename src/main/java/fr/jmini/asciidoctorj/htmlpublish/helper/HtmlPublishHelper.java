@@ -7,8 +7,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -255,14 +257,6 @@ public class HtmlPublishHelper {
         throw new IllegalStateException("Could not find '" + holder.getInputFile() + "'.");
     }
 
-    private static boolean isHtmlFile(Path path) {
-        return path.toFile()
-                .isFile()
-                && path.toFile()
-                        .getName()
-                        .endsWith("html");
-    }
-
     private static PathHolder createHolder(Path inputFolder, Path inputFile, Path outputFolder) {
         Path inputRelPath = inputFolder.relativize(inputFile);
         Path outputFile = outputFolder.resolve(inputRelPath);
@@ -318,6 +312,57 @@ public class HtmlPublishHelper {
         public String getAnchor() {
             return anchor;
         }
+    }
+
+    /**
+     * List all the html files inside a folder
+     *
+     * @param folder
+     *            input folder
+     * @param input
+     *            sub-path relative to the input folder to include in the list, if omitted all the files in the folder are listed
+     * @return a list of sub-path inside the folder
+     * @throws IOException
+     */
+    public static List<String> listHtmlFiles(Path folder, String... input) throws IOException {
+        Set<String> files = new HashSet<String>();
+        if (input.length == 0) {
+            input = new String[] { "" };
+        }
+        for (String i : input) {
+            Path p = folder.resolve(i);
+            if (Files.isDirectory(p)) {
+                Files.walk(p)
+                        .filter(path -> isHtmlFile(path))
+                        .map(path -> relativizeToString(folder, path))
+                        .forEach(files::add);
+            } else if (isHtmlFile(p)) {
+                files.add(relativizeToString(folder, p));
+            }
+        }
+        return files.stream()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    private static String relativizeToString(Path rootFolder, Path p) {
+        return rootFolder.relativize(p)
+                .toString()
+                .replace('\\', '/');
+    }
+
+    /**
+     * Based on the name, returns if a path is an html path or not.
+     *
+     * @param path
+     * @return
+     */
+    public static boolean isHtmlFile(Path path) {
+        return path.toFile()
+                .isFile()
+                && path.toFile()
+                        .getName()
+                        .endsWith("html");
     }
 
 }
