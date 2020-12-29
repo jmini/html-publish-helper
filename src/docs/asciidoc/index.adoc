@@ -21,9 +21,22 @@ TIP: Do you want to improve this page? Please git-link:self[edit it on GitHub, e
 
 == Description
 
-The main class is called `HtmlPublishHelper` and can be used in a gradle build to perform operations on HTML files.
+The goal of the project is to perform some operations on existing HTML files (like the one produced by a tool like link:https://asciidoctor.org/[asciidoctor]) in order to optimise the published files.
 
-Example setup:
+The features include:
+
+* Move html files (while preserving relative links between files).
+* Reorganize resources (images, javascript, css, …) into sub-folders.
+* Add an hash to the resources name based on their content (to activate client side caching).
+* Combine multiple files into a complete side (based on link:https://gitlab.com/antora/antora-ui-default[Antora Default UI]) by adding navigation capabilities.
+* Keeping a catalog of the published files (in order to work on redirection later on).
+
+The main entry point is: `HtmlPublishHelper.publishHtmlFile(ConfigurationHolder)`
+
+Where the `ConfigurationHolder` parameter can be used to configure the behavior.
+
+== A first example
+
 Imagine you have several files (`case1/index.html`, `case2/page1.html`, `case2/sub/page1.html` in the example bellow) that are sharing resources in folders that are somewhere else (`assets/` or `imgs/`)
 
 ----
@@ -43,32 +56,123 @@ inputFolder
     └── img.svg
 ----
 
-If you run `HtmlPublishHelper.publishHtmlFile(inputFile, inputFolder, outputFolder)` for the `case1/index.html` file.
-You will get the html rewritten with the resources moved in appropriate sub-folders (`css/`, `images/` and `js/`).
+Imagine you want to publish `case1/index.html` as `page.html` with the resources used in the page renamed (with a hash based on their content) and grouped into a subfolder (`static/`).
+
+This configuration object can be used:
+
+[source, java]
+----
+include::{rootdir}/src/test/java/fr/jmini/utils/htmlpublish/helper/internal/ImplTest.java[tags=configuration,indent=0]
+----
+
+You will get following structure:
 
 ----
 outputFolder
-├── css
-│   └── file.css
-├── images
-│   ├── image.png
-│   └── img.svg
-├── index.html
-└── js
-    └── empty.js
+├── page.html
+└── static
+    ├── css
+    │   └── file_22ae394.css
+    ├── images
+    │   ├── image_a61d85b.png
+    │   └── img_61336b7.svg
+    └── scripts
+        └── empty_b716e1f.js
 ----
 
-To move all the html files of a folder (and subfolder), `HtmlPublishHelper.publishHtmlFolder(inputFolder, outputFolder)` can be used.
+== Configuration Holder
 
-To move specific html files of a folder, `HtmlPublishHelper.publishHtmlFilesInFolder(inputFolder, outputFolder, items)` can be used.
-The `items` argument is a list of sub-path in the `inputFolder`.
-It could be a list containing `"case2/page1.html"` and `"case2/sub/page2.html"` using the same example as before.
+The `ConfigurationHolder` class is holding all the configurations for the publication logic.
 
-You can also use the `items` list to change the sub-path in the output folder using this notation `<sub-path in input>:<sub-path in output>`.
-For example, to publish the two pages of `case2` in a single folder called `folder` inside the output folder, use a list containing: `"case2/page1.html:folder/p1.html"` and `"case2/sub/page2.html:folder/p2.html"` (the links inside the pages will also be renamed).
+=== Input / output
 
-The element in `items` can also be a folder or a pair of folders (if you want to change the name in the output).
-In this case all `*.html` files will be considered.
+The `inputRootFolder` is defining where the files used as input are located.
+The `outputRootFolder` is mandatory and defines where the output will be located
+
+=== Options
+
+* `clearOutputRootFolder`: indicates if the `outputRootFolder` must be deleted before starting the publishing or not.
+* `pagesBaseFolder`: when folders are used, the approach of the link:https://jmini.github.io/path-order/[path-order] project with the `pages.yaml` can be used to control page ordering. If those yaml files are not in the same folder than the `*.html` files (imagine keeping them next to your asciiDoc sources) the `pagesBaseFolder` option can be used to define the relative path where the `pages.yaml` files can be found.
+
+==== Resources options
+
+When the resources (images, scripts, css files …) are copied to the output folder, some modifications are applied.
+
+The location is changed and controlled with:
+
+* `imagesOutputFolder` for images
+* `javascriptOutputFolder` for scripts
+* `cssOutputFolder` for css files
+* `fontOutputFolder` for
+
+In order to activate client side caching, the url to the resources must be unique, based on the content.
+This can be controlled with `resourcesRewriteStrategy`.
+
+==== Complete site options
+
+When several HTML files are created by a tool like link:https://asciidoctor.org/[asciidoctor], each of them are independent unit.
+
+With the `completeSite` option it is possible to modify them to add some navigation capabilities (tree of pages, breadcrumb, next/previous links, …)
+
+In addition when this option is activated:
+
+* `includeDefaultCss`: indicates if the default css (`site.css`) is included during publication of the complete site. See link:https://gitlab.com/antora/antora-ui-default[Antora Default UI]
+* `includeDefaultJs`: indicates if the default javascript (`site.js`) is included during publication of the complete site. See link:https://gitlab.com/antora/antora-ui-default[Antora Default UI]
+* `createToc`: controls if the table of content is created during, note that the default javascript is also creating the table of content dynamically
+* `siteName`: name of the site, if omitted the title is computed depending on the `siteHomePath` value. If the value is referencing a local page, its title is used. If the value is a distant URL, the name of the `inputRootFolder` is used.
+* `siteHomePath`: path to the home of the site. It can be either an absolute URL, or a page relative to the `inputRootFolder`. When nothing is specified the first page of the tree is used.
+* `footer`: footer of the site
+
+=== Pages
+
+Inside the `inputRootFolder` it is possible to define a tree of pages.
+This is useful to move or rename pages.
+In case of a complete site publication, the page tree is also used for the navigation.
+
+For each page definition a folder or a single file can be referenced.
+In case of a folder all `*.html` files in the folder will be considered.
+With `includeChildFolders` it is possible to control if files in sub-folders will be traversed or not.
+The `indexHandling` option controls how the file `index.html` inside a folder is considered.
+
+If the `output` is defined and differ from the `input` this means that the page will be renamed (or moved).
+All links in the other pages will be adjusted.
+
+A `title` for each page can be specified.
+The title can also be derived from the HTML content (with `titleSelector`).
+When nothing is specified, the content inside `<title>..</title>` is used.
+
+When a complete site is published the `sitePageSelector` option it tells which part of the page should be selected. 
+By default the content inside `<body>..</body>` is used.
+
+The options can be specified for each page.
+The `defaultPageOptions` inside `ConfigurationHolder` allows to specify options applied to all pages
+
+=== Catalog
+
+The file catalog is a way to keep track of all the published pages over time.
+This functionality can be interesting to ensure that redirects are presents.
+You can define multiple catalogs if you have to.
+
+You can define:
+
+* The `folder` that is used as input for the catalog
+* The `strategy` used to compute the catalog (either based on the defined page tree or with a folder scan)
+* The `outputFile` where the output content is stored
+* The `outputAction` to specify the action that should be performed when the output is stored.
+
+== Download
+
+The library is hosted on maven central.
+
+[source, xml, subs="verbatim,attributes"]
+.Maven coordinates of the library
+----
+<dependency>
+  <groupId>fr.jmini.utils</groupId>
+  <artifactId>html-publish-helper</artifactId>
+  <version>{last-stable-version}</version>
+</dependency>
+----
 
 == Source Code
 
@@ -102,7 +206,7 @@ The output of this command is an HTML page located at `<git repo root>/build/doc
 
 `signing.gnupg.keyName` and `signing.gnupg.passphrase` are expected to be set in your local `gradle.properties` file to be able to sign.
 `sonatypeUser` and `sonatypePassword` are expected to be set in order to be able to publish to a distant repository.
-					
+
 Command to build and publish the result to maven central:
 
 ----

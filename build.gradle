@@ -23,7 +23,7 @@ wrapper {
     gradleVersion = '6.7.1'
 }
 
-group = 'fr.jmini.asciidoctorj'
+group = 'fr.jmini.utils'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -54,7 +54,9 @@ tasks.withType(Sign) {
 }
 
 dependencies {
+    implementation "fr.jmini.utils:path-order:$pathorderVersion"
     implementation "org.jsoup:jsoup:$jsoupVersion"
+    implementation "org.yaml:snakeyaml:$snakeyamlVersion"
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
     testImplementation "org.assertj:assertj-core:$assertjVersion"
@@ -129,7 +131,8 @@ asciidoctor {
     outputDir = file('build/docs')
     attributes = ['revdate'             : "${buildDate()}",
                   'project-version'     : "$version",
-                  'attribute-missing'    : 'warn',
+                  'last-stable-version' : "$lastVersion",
+                  'attribute-missing'   : 'warn',
                   'source-highlighter'  : 'coderay',
                   'imagesdir'           : '',
                   'toc'                 : 'left',
