@@ -318,7 +318,9 @@ public class Impl {
                 .includeChildFolders(true);
         String pagesBaseFolder = params.getOptions()
                 .getPagesBaseFolder();
-        return createPageMapping(params.getInputRootFolder(), params.getOutputRootFolder(), pagesBaseFolder, page, params.getDefaultPageOptions(), Collections.emptyList()).getChildren();
+        return createPageMapping(params.getInputRootFolder(), params.getOutputRootFolder(), pagesBaseFolder, page, params.getDefaultPageOptions(), Collections.emptyList())
+                .map(PageMapping::getChildren)
+                .orElse(Collections.emptyList());
     }
 
     private static List<PageMapping> createPageMappings(Parameters param, List<ConfigurationPage> list) {
@@ -335,12 +337,14 @@ public class Impl {
                     }
                     return createPageMapping(param.getInputRootFolder(), param.getOutputRootFolder(), pagesBaseFolder, page, pageOptions, childrenMappings);
                 })
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
-    private static PageMapping createPageMapping(Path inputRootFolder, Path outputRootFolder, String pagesBaseFolder, ConfigurationPage page, ConfigurationPageOptions pageOptions, List<PageMapping> childrenFromConfig) {
+    private static Optional<PageMapping> createPageMapping(Path inputRootFolder, Path outputRootFolder, String pagesBaseFolder, ConfigurationPage page, ConfigurationPageOptions pageOptions, List<PageMapping> childrenFromConfig) {
         if (page.getInput() == null) {
-            return new PageMapping(null, false, null, pageOptions, page.getTitle(), childrenFromConfig);
+            return Optional.of(new PageMapping(null, false, null, pageOptions, page.getTitle(), childrenFromConfig));
         }
         Path inputPath = inputRootFolder.resolve(page.getInput());
         if (Files.isDirectory(inputPath)) {
@@ -361,6 +365,7 @@ public class Impl {
                         .sorted(new AbsolutePathComparator(p -> loadPageOrder(inputRootFolder, pagesBaseFolder, p), null, Order.NATURAL))
                         .map(p -> {
                             if (Files.isDirectory(p)) {
+
                                 ConfigurationPage childPage = new ConfigurationPage()
                                         .input(inputRootFolder.relativize(p)
                                                 .toString())
@@ -378,8 +383,10 @@ public class Impl {
                             }
                             Path inputRelPath = inputFolder.relativize(p);
                             Path outputPath = outputFolder.resolve(inputRelPath);
-                            return new PageMapping(p, true, outputPath, pageOptions, null, Collections.emptyList());
+                            return Optional.of(new PageMapping(p, true, outputPath, pageOptions, null, Collections.emptyList()));
                         })
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
                         .collect(Collectors.toList());
             } catch (IOException e) {
                 throw new IllegalStateException("Could not get the content of folder input '" + page.getInput() + "' in input root folder '" + inputRootFolder + "' : " + e.getMessage());
@@ -388,20 +395,22 @@ public class Impl {
             List<PageMapping> children = new ArrayList<>();
             children.addAll(childrenFromFolder);
             children.addAll(childrenFromConfig);
-
             Path indexPath = inputPath.resolve("index.html");
             if (Files.isRegularFile(indexPath)) {
                 if (pageOptions.getIndexHandling() == IndexHandling.USE_PAGE_AS_PARENT) {
-                    return createPageMappingForFile(inputRootFolder, outputRootFolder, page, pageOptions, children, indexPath);
+                    return Optional.of(createPageMappingForFile(inputRootFolder, outputRootFolder, page, pageOptions, children, indexPath));
                 } else if (pageOptions.getIndexHandling() == IndexHandling.USE_TITLE_ONLY) {
                     Document doc = createDocument(indexPath);
                     String title = readTitleFromDoc(doc, pageOptions, indexPath);
-                    return new PageMapping(inputPath, false, null, pageOptions, title, children);
+                    return Optional.of(new PageMapping(inputPath, false, null, pageOptions, title, children));
                 }
             }
-            return new PageMapping(inputPath, false, null, pageOptions, page.getTitle(), children);
+            if (children.isEmpty()) {
+                return Optional.empty();
+            }
+            return Optional.of(new PageMapping(inputPath, false, null, pageOptions, page.getTitle(), children));
         } else {
-            return createPageMappingForFile(inputRootFolder, outputRootFolder, page, pageOptions, childrenFromConfig, inputPath);
+            return Optional.of(createPageMappingForFile(inputRootFolder, outputRootFolder, page, pageOptions, childrenFromConfig, inputPath));
         }
     }
 
@@ -1175,7 +1184,7 @@ public class Impl {
         }
     }
 
-    private static String relativizeToString(Path rootFolder, Path p) {
+    static String relativizeToString(Path rootFolder, Path p) {
         return rootFolder.relativize(p)
                 .toString()
                 .replace('\\', '/');
