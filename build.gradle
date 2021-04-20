@@ -32,7 +32,7 @@ java {
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
