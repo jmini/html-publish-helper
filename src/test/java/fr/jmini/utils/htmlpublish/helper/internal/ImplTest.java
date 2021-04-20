@@ -1681,6 +1681,40 @@ class ImplTest {
     }
 
     @Test
+    void testPageOrderInPlacePagesYaml() throws Exception {
+        Path inputFolder = CASE3_FOLDER.toAbsolutePath();
+        Path outputFolder = Files.createTempDirectory("test")
+                .resolve("output");
+
+        ConfigurationHolder config = new ConfigurationHolder()
+                .inputRootFolder(inputFolder)
+                .outputRootFolder(outputFolder)
+                .defaultPageOptions(new ConfigurationPageOptions()
+                        .indexHandling(IndexHandling.USE_PAGE_AS_PARENT))
+                .options(new ConfigurationOptions()
+                        .completeSite(true));
+
+        Parameters parameters = Impl.prepareParameters(config);
+
+        List<String> result = parameters.getAllPageHolders()
+                .stream()
+                .map(h -> Impl.relativizeToString(inputFolder, h.getInputFile()))
+                .collect(Collectors.toList());
+        assertThat(result).containsExactly(
+                "one.html",
+                "two.html",
+                "three.html",
+                "four.html",
+                "chapter1/index.html",
+                "chapter1/sec5.html",
+                "chapter1/sec10.html",
+                "chapter1/sec1.html",
+                "chapter2/index.html",
+                "chapter2/sub-a/index.html",
+                "chapter2/sub-b/index.html");
+    }
+
+    @Test
     void testToHrefHolder() throws Exception {
         HrefHolder holder1 = Impl.toHrefHolder("folder/page.html#anchor");
         assertThat(holder1.getPath()).isEqualTo("folder/page.html");
