@@ -41,11 +41,13 @@ class ImplTest {
     private static final String CASE3_THREE = "three.html";
     private static final String CASE3_FOUR = "four.html";
     private static final String CASE3_CHAPTER1 = "chapter1";
+    private static final Path CASE3_CHAPTER1_FOLDER = CASE3_FOLDER.resolve(CASE3_CHAPTER1);
     private static final String CASE3_CHAPTER1_INDEX = "chapter1/index.html";
     private static final String CASE3_CHAPTER1_SEC1 = "chapter1/sec1.html";
     private static final String CASE3_CHAPTER1_SEC5 = "chapter1/sec5.html";
     private static final String CASE3_CHAPTER1_SEC10 = "chapter1/sec10.html";
     private static final String CASE3_CHAPTER2 = "chapter2";
+    private static final Path CASE3_CHAPTER2_FOLDER = CASE3_FOLDER.resolve(CASE3_CHAPTER2);
     private static final String CASE3_CHAPTER2_INDEX = "chapter2/index.html";
     private static final String CASE3_CHAPTER2_SUB_B = "chapter2/sub-b/index.html";
     private static final String CASE3_CHAPTER2_SUB_A = "chapter2/sub-a/index.html";
@@ -140,6 +142,29 @@ class ImplTest {
                 .contains("<a href=\"file:///tmp/file.txt\">file.txt</a>")
                 .contains("<a href=\"mailto:info@company.com\">");
 
+    }
+
+    @Test
+    void testCase1WithoutPageDefintion() throws Exception {
+        Path outputFolder = Files.createTempDirectory("test")
+                .resolve("output");
+
+        ConfigurationHolder config = new ConfigurationHolder()
+                .inputRootFolder(CASE1_FOLDER)
+                .outputRootFolder(outputFolder);
+        Impl.run(config);
+
+        // expected tree:
+        assertThat(renderFolder(outputFolder)).isEqualTo(""
+                + "output\n"
+                + "├──css\n"
+                + "│   └──file.css\n"
+                + "├──images\n"
+                + "│   ├──image.png\n"
+                + "│   └──img.svg\n"
+                + "├──index.html\n"
+                + "└──js\n"
+                + "    └──empty.js\n");
     }
 
     @Test
@@ -385,7 +410,7 @@ class ImplTest {
                 .contains("<title>Page</title>")
                 .contains("<a class=\"navbar-item\" href=\"page.html\">Page</a>")
                 .contains("<a class=\"home-link is-current\" href=\"page.html\"></a>")
-                .contains("<li><a href=\"page.html\">Page</a></li>") //breadcrumbs
+                .doesNotContain("<li><a href=\"page.html\">Page</a></li>") //breadcrumbs (not present because single page)
                 .doesNotContain("<span class=\"prev\">")
                 .doesNotContain("<span class=\"next\">");
     }
@@ -1681,6 +1706,75 @@ class ImplTest {
     }
 
     @Test
+    void testPageOrderCase3Chapter1() throws Exception {
+        Path inputFolder = CASE3_CHAPTER1_FOLDER.toAbsolutePath();
+        Path outputFolder = Files.createTempDirectory("test")
+                .resolve("output");
+
+        ConfigurationHolder config1 = new ConfigurationHolder()
+                .inputRootFolder(inputFolder)
+                .outputRootFolder(outputFolder);
+        Parameters parameters1 = Impl.prepareParameters(config1);
+        List<String> result1 = computeListOfPages(parameters1);
+        assertThatListContainsCase3Chapter1Pages(result1);
+
+        ConfigurationHolder config2 = new ConfigurationHolder()
+                .inputRootFolder(inputFolder)
+                .outputRootFolder(outputFolder)
+                .defaultPageOptions(new ConfigurationPageOptions()
+                        .indexHandling(IndexHandling.USE_PAGE_AS_PARENT));
+        Parameters parameters2 = Impl.prepareParameters(config2);
+        assertThat(parameters2.getSiteName()).isEqualTo("Chapter 1");
+        List<String> result2 = computeListOfPages(parameters2);
+        assertThatListContainsCase3Chapter1Pages(result2);
+
+        ConfigurationHolder config3 = new ConfigurationHolder()
+                .inputRootFolder(inputFolder)
+                .outputRootFolder(outputFolder)
+                .defaultPageOptions(new ConfigurationPageOptions()
+                        .indexHandling(IndexHandling.USE_PAGE_IN_THE_LIST));
+        Parameters parameters3 = Impl.prepareParameters(config3);
+        assertThat(parameters3.getSiteName()).isEqualTo("Chapter 1");
+        List<String> result3 = computeListOfPages(parameters3);
+        assertThatListContainsCase3Chapter1Pages(result3);
+
+        ConfigurationHolder config4 = new ConfigurationHolder()
+                .inputRootFolder(inputFolder)
+                .outputRootFolder(outputFolder)
+                .defaultPageOptions(new ConfigurationPageOptions()
+                        .indexHandling(IndexHandling.USE_TITLE_ONLY));
+        Parameters parameters4 = Impl.prepareParameters(config4);
+        assertThat(parameters4.getSiteName()).isEqualTo("Chapter 1");
+        List<String> result4 = computeListOfPages(parameters4);
+        assertThatListContainsCase3Chapter1PagesWithoutIndex(result4);
+
+        ConfigurationHolder config5 = new ConfigurationHolder()
+                .inputRootFolder(inputFolder)
+                .outputRootFolder(outputFolder)
+                .defaultPageOptions(new ConfigurationPageOptions()
+                        .indexHandling(IndexHandling.SKIP));
+        Parameters parameters5 = Impl.prepareParameters(config5);
+        assertThat(parameters5.getSiteName()).isEqualTo("Chapter 1 - section 5");
+        List<String> result5 = computeListOfPages(parameters5);
+        assertThatListContainsCase3Chapter1PagesWithoutIndex(result5);
+    }
+
+    private void assertThatListContainsCase3Chapter1Pages(List<String> list) {
+        assertThat(list).containsExactly(
+                "index.html",
+                "sec5.html",
+                "sec10.html",
+                "sec1.html");
+    }
+
+    private void assertThatListContainsCase3Chapter1PagesWithoutIndex(List<String> list) {
+        assertThat(list).containsExactly(
+                "sec5.html",
+                "sec10.html",
+                "sec1.html");
+    }
+
+    @Test
     void testPageOrderInPlacePagesYaml() throws Exception {
         Path inputFolder = CASE3_FOLDER.toAbsolutePath();
         Path outputFolder = Files.createTempDirectory("test")
@@ -1695,11 +1789,7 @@ class ImplTest {
                         .completeSite(true));
 
         Parameters parameters = Impl.prepareParameters(config);
-
-        List<String> result = parameters.getAllPageHolders()
-                .stream()
-                .map(h -> Impl.relativizeToString(inputFolder, h.getInputFile()))
-                .collect(Collectors.toList());
+        List<String> result = computeListOfPages(parameters);
         assertThat(result).containsExactly(
                 "one.html",
                 "two.html",
@@ -1712,6 +1802,15 @@ class ImplTest {
                 "chapter2/index.html",
                 "chapter2/sub-a/index.html",
                 "chapter2/sub-b/index.html");
+    }
+
+    private List<String> computeListOfPages(Parameters parameters) {
+        List<String> result = parameters.getAllPageHolders()
+                .stream()
+                .filter(h -> h.isInputFileExists())
+                .map(h -> Impl.relativizeToString(parameters.getInputRootFolder(), h.getInputFile()))
+                .collect(Collectors.toList());
+        return result;
     }
 
     @Test

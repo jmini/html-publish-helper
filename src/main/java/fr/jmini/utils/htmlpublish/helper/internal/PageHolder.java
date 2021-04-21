@@ -14,15 +14,17 @@ class PageHolder implements Link {
     private Document document;
 
     private PageHolder parent;
+    private boolean uniqueRoot;
     private List<PageHolder> children;
     private PageHolder previous;
     private PageHolder next;
     private String title;
 
-    public PageHolder(PageHolder parent, PageMapping pageMapping, Document document, String title) {
-        this.parent = parent;
-        this.children = new ArrayList<>();
+    public PageHolder(PageMapping pageMapping, PageHolder parent, boolean uniqueRoot, Document document, String title) {
         this.pageMapping = pageMapping;
+        this.parent = parent;
+        this.uniqueRoot = uniqueRoot;
+        this.children = new ArrayList<>();
         this.document = document;
         this.title = title;
     }
@@ -51,6 +53,10 @@ class PageHolder implements Link {
         return parent;
     }
 
+    public boolean isUniqueRoot() {
+        return uniqueRoot;
+    }
+
     public void setChildren(List<PageHolder> children) {
         this.children = children;
     }
@@ -76,7 +82,18 @@ class PageHolder implements Link {
     }
 
     public String getTitle() {
-        return title;
+        if (pageMapping.getTitle() != null) {
+            return pageMapping.getTitle();
+        } else if (title != null) {
+            return title;
+        }
+        return pageMapping.getInputFile()
+                .getFileName()
+                .toString();
+    }
+
+    public boolean isTitleSet() {
+        return pageMapping.getTitle() != null || title != null;
     }
 
     @Override

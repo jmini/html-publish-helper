@@ -217,41 +217,39 @@ public class Impl {
                     .orElseThrow(() -> new IllegalStateException("Option 'siteHomePath' is null and there is no pages that exists to publish"));
             param.setSiteHomeLink(firstPage);
             if (param.getSiteName() == null) {
-                param.setSiteName(firstPage.getTitle());
+                PageHolder firstTitle = param.getAllPageHolders()
+                        .stream()
+                        .filter(h -> h.isTitleSet())
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalStateException("Option 'siteName' is null and there is no pages that contains a title to publish"));
+                param.setSiteName(firstTitle.getTitle());
             }
         }
     }
 
     private static List<PageHolder> createPageHolders(List<PageMapping> pageMappings, PageHolder parent) {
+        boolean uniqueRoot = (parent == null && pageMappings.size() == 1);
         List<PageHolder> pageHolders = pageMappings.stream()
-                .map(m -> createPageHolder(m, parent))
+                .map(m -> createPageHolder(m, parent, uniqueRoot))
                 .collect(Collectors.toList());
         return pageHolders;
     }
 
-    private static PageHolder createPageHolder(PageMapping pageMapping, PageHolder parent) {
+    private static PageHolder createPageHolder(PageMapping pageMapping, PageHolder parent, boolean uniqueRoot) {
         if (pageMapping.isInputFileExists()) {
             Document doc = createDocument(pageMapping.getInputFile());
             String title;
-            if (pageMapping.getTitle() != null) {
-                title = pageMapping.getTitle();
-            } else {
+            if (pageMapping.getTitle() == null) {
                 title = readTitleFromDoc(doc, pageMapping.getPageOptions(), pageMapping.getInputFile());
+            } else {
+                title = null;
             }
-            PageHolder pageHolder = new PageHolder(parent, pageMapping, doc, title);
+            PageHolder pageHolder = new PageHolder(pageMapping, parent, uniqueRoot, doc, title);
             pageHolder.setChildren(createPageHolders(pageMapping.getChildren(), pageHolder));
             return pageHolder;
         }
 
-        String title;
-        if (pageMapping.getTitle() != null) {
-            title = pageMapping.getTitle();
-        } else {
-            title = pageMapping.getInputFile()
-                    .getFileName()
-                    .toString();
-        }
-        PageHolder pageHolder = new PageHolder(parent, pageMapping, null, title);
+        PageHolder pageHolder = new PageHolder(pageMapping, parent, uniqueRoot, null, null);
         pageHolder.setChildren(createPageHolders(pageMapping.getChildren(), pageHolder));
         return pageHolder;
     }
@@ -319,7 +317,7 @@ public class Impl {
         String pagesBaseFolder = params.getOptions()
                 .getPagesBaseFolder();
         return createPageMapping(params.getInputRootFolder(), params.getOutputRootFolder(), pagesBaseFolder, page, params.getDefaultPageOptions(), Collections.emptyList())
-                .map(PageMapping::getChildren)
+                .map(p -> Collections.singletonList(p))
                 .orElse(Collections.emptyList());
     }
 
@@ -562,7 +560,16 @@ public class Impl {
                 .addClass("title")
                 .appendElement("a")
                 .attr("href", "#");
-        appendNavList(0, param.getPageHolders(), current, navMenu);
+        List<PageHolder> pageHolders = param.getPageHolders();
+        List<PageHolder> pages;
+        if (pageHolders.size() == 1) {
+            pages = pageHolders
+                    .get(0)
+                    .getChildren();
+        } else {
+            pages = pageHolders;
+        }
+        appendNavList(0, pages, current, navMenu);
 
         nav.appendElement("div")
                 .addClass("nav-panel-explore")
@@ -703,7 +710,9 @@ public class Impl {
             list.add(0, p);
             p = p.getParent();
         }
-        list.add(0, p);
+        if (!p.isUniqueRoot()) {
+            list.add(0, p);
+        }
         return list;
     }
 
