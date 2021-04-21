@@ -1495,7 +1495,7 @@ class ImplTest {
                 .addCatalog(new ConfigurationCatalog().outputFile(catalog1));
 
         // The 'pagesSrc' folder defines:
-        // Root: chapter2, chapter1, one.html
+        // Root: two, chapter2, chapter1, one, three
         // Root/chapter1: other defaultValue (NATURAL_REVERSED)
         // Root/chapter2: other defaultValue (LEXI_REVERSED)
 
@@ -1802,6 +1802,73 @@ class ImplTest {
                 "chapter2/index.html",
                 "chapter2/sub-a/index.html",
                 "chapter2/sub-b/index.html");
+    }
+
+    @Test
+    void testPageOrderWithDifferentPagesYaml() throws Exception {
+        Path inputFolder = CASE3_FOLDER.toAbsolutePath();
+        Path outputFolder = Files.createTempDirectory("test")
+                .resolve("output");
+
+        ConfigurationHolder config = new ConfigurationHolder()
+                .inputRootFolder(inputFolder)
+                .outputRootFolder(outputFolder)
+                .defaultPageOptions(new ConfigurationPageOptions()
+                        .indexHandling(IndexHandling.USE_PAGE_AS_PARENT))
+                .options(new ConfigurationOptions()
+                        .completeSite(true)
+                        .pagesBaseFolder("pagesSrc"));
+
+        Parameters parameters = Impl.prepareParameters(config);
+        List<String> result = computeListOfPages(parameters);
+
+        // The 'pagesSrc' folder defines:
+        // Root: two, chapter2, chapter1, one, three
+        // Root/chapter1: other defaultValue (NATURAL_REVERSED)
+        // Root/chapter2: other defaultValue (LEXI_REVERSED)
+        assertThat(result).containsExactly(
+                "two.html",
+                "chapter2/index.html",
+                "chapter2/sub-b/index.html",
+                "chapter2/sub-a/index.html",
+                "chapter1/index.html",
+                "chapter1/sec10.html",
+                "chapter1/sec5.html",
+                "chapter1/sec1.html",
+                "one.html",
+                "three.html",
+                "four.html");
+    }
+
+    @Test
+    void testPageOrderWithBrokenPagesYaml() throws Exception {
+        Path inputFolder = CASE3_FOLDER.toAbsolutePath();
+        Path outputFolder = Files.createTempDirectory("test")
+                .resolve("output");
+
+        ConfigurationHolder config = new ConfigurationHolder()
+                .inputRootFolder(inputFolder)
+                .outputRootFolder(outputFolder)
+                .defaultPageOptions(new ConfigurationPageOptions()
+                        .indexHandling(IndexHandling.USE_PAGE_AS_PARENT))
+                .options(new ConfigurationOptions()
+                        .completeSite(true)
+                        .pagesBaseFolder("pagesBroken"));
+
+        Parameters parameters = Impl.prepareParameters(config);
+        List<String> result = computeListOfPages(parameters);
+        assertThat(result).containsExactly(
+                "chapter1/index.html",
+                "chapter1/sec1.html",
+                "chapter1/sec5.html",
+                "chapter1/sec10.html",
+                "chapter2/index.html",
+                "chapter2/sub-a/index.html",
+                "chapter2/sub-b/index.html",
+                "four.html",
+                "one.html",
+                "three.html",
+                "two.html");
     }
 
     private List<String> computeListOfPages(Parameters parameters) {

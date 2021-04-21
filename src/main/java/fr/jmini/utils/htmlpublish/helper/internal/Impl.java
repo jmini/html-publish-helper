@@ -34,6 +34,7 @@ import org.jsoup.nodes.DocumentType;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog;
 import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog.OutputAction;
@@ -412,20 +413,22 @@ public class Impl {
         }
     }
 
-    static SortConfig loadPageOrder(Path inputRootFolder, String pagesBaseFolder, Path inputPath) {
+    static Optional<SortConfig> loadPageOrder(Path inputRootFolder, String pagesBaseFolder, Path inputPath) {
         Path path = computePathBasedOnPagesBaseFolder(inputRootFolder, pagesBaseFolder, inputPath);
         if (Files.isDirectory(path)) {
             Path yamlFile = path.resolve("pages.yaml");
             if (Files.isReadable(yamlFile)) {
                 Yaml yaml = new Yaml();
                 try (InputStream inputStream = Files.newInputStream(yamlFile)) {
-                    return yaml.loadAs(inputStream, Pages.class);
+                    return Optional.of(yaml.loadAs(inputStream, Pages.class));
+                } catch (YAMLException e) {
+                    System.err.println("Syntax error in the '" + yamlFile.toAbsolutePath() + "' file");
                 } catch (IOException e) {
-                    throw new IllegalStateException("Could not read the `pages.yaml` file", e);
+                    System.err.println("Could not read the '" + yamlFile.toAbsolutePath() + "' file");
                 }
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     private static Path computePathBasedOnPagesBaseFolder(Path inputRootFolder, String pagesBaseFolder, Path inputPath) {
