@@ -1715,7 +1715,7 @@ class ImplTest {
                 .inputRootFolder(inputFolder)
                 .outputRootFolder(outputFolder);
         Parameters parameters1 = Impl.prepareParameters(config1);
-        List<String> result1 = computeListOfPagesFromConfig(inputFolder, parameters1);
+        List<String> result1 = computeListOfPages(parameters1);
         assertThatListContainsCase3Chapter1Pages(result1);
 
         ConfigurationHolder config2 = new ConfigurationHolder()
@@ -1725,7 +1725,7 @@ class ImplTest {
                         .indexHandling(IndexHandling.USE_PAGE_AS_PARENT));
         Parameters parameters2 = Impl.prepareParameters(config2);
         assertThat(parameters2.getSiteName()).isEqualTo("Chapter 1");
-        List<String> result2 = computeListOfPagesFromConfig(inputFolder, parameters2);
+        List<String> result2 = computeListOfPages(parameters2);
         assertThatListContainsCase3Chapter1Pages(result2);
 
         ConfigurationHolder config3 = new ConfigurationHolder()
@@ -1735,7 +1735,7 @@ class ImplTest {
                         .indexHandling(IndexHandling.USE_PAGE_IN_THE_LIST));
         Parameters parameters3 = Impl.prepareParameters(config3);
         assertThat(parameters3.getSiteName()).isEqualTo("Chapter 1");
-        List<String> result3 = computeListOfPagesFromConfig(inputFolder, parameters3);
+        List<String> result3 = computeListOfPages(parameters3);
         assertThatListContainsCase3Chapter1Pages(result3);
 
         ConfigurationHolder config4 = new ConfigurationHolder()
@@ -1745,7 +1745,7 @@ class ImplTest {
                         .indexHandling(IndexHandling.USE_TITLE_ONLY));
         Parameters parameters4 = Impl.prepareParameters(config4);
         assertThat(parameters4.getSiteName()).isEqualTo("Chapter 1");
-        List<String> result4 = computeListOfPagesFromConfig(inputFolder, parameters4);
+        List<String> result4 = computeListOfPages(parameters4);
         assertThatListContainsCase3Chapter1PagesWithoutIndex(result4);
 
         ConfigurationHolder config5 = new ConfigurationHolder()
@@ -1755,7 +1755,7 @@ class ImplTest {
                         .indexHandling(IndexHandling.SKIP));
         Parameters parameters5 = Impl.prepareParameters(config5);
         assertThat(parameters5.getSiteName()).isEqualTo("Chapter 1 - section 5");
-        List<String> result5 = computeListOfPagesFromConfig(inputFolder, parameters5);
+        List<String> result5 = computeListOfPages(parameters5);
         assertThatListContainsCase3Chapter1PagesWithoutIndex(result5);
     }
 
@@ -1789,7 +1789,7 @@ class ImplTest {
                         .completeSite(true));
 
         Parameters parameters = Impl.prepareParameters(config);
-        List<String> result = computeListOfPagesFromConfig(inputFolder, parameters);
+        List<String> result = computeListOfPages(parameters);
         assertThat(result).containsExactly(
                 "one.html",
                 "two.html",
@@ -1804,11 +1804,11 @@ class ImplTest {
                 "chapter2/sub-b/index.html");
     }
 
-    private List<String> computeListOfPagesFromConfig(Path inputFolder, Parameters parameters) {
+    private List<String> computeListOfPages(Parameters parameters) {
         List<String> result = parameters.getAllPageHolders()
                 .stream()
                 .filter(h -> h.isInputFileExists())
-                .map(h -> Impl.relativizeToString(inputFolder, h.getInputFile()))
+                .map(h -> Impl.relativizeToString(parameters.getInputRootFolder(), h.getInputFile()))
                 .collect(Collectors.toList());
         return result;
     }
