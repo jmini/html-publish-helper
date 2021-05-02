@@ -615,6 +615,9 @@ public class Impl {
                 .addClass("content");
         Element article = content.appendElement("article")
                 .addClass("doc");
+        article.appendElement("h1")
+                .addClass("page")
+                .text(current.getTitle());
 
         for (Element e : elementToInsert.children()) {
             article.appendChild(e.clone());

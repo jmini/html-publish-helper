@@ -408,6 +408,7 @@ class ImplTest {
                 .doesNotContain("href=\"static/css/site.css\"") // include 'site.css'
                 .doesNotContain("src=\"assets/js/site.js\"") // include 'site.js'
                 .contains("<title>Page</title>")
+                .contains("<h1 class=\"page\">Page</h1>")
                 .contains("<a class=\"navbar-item\" href=\"page.html\">Page</a>")
                 .contains("<a class=\"home-link is-current\" href=\"page.html\"></a>")
                 .doesNotContain("<li><a href=\"page.html\">Page</a></li>") //breadcrumbs (not present because single page)
@@ -790,6 +791,7 @@ class ImplTest {
                 .contains("<script src=\"js/site.js\"></script>") // include 'site.js'
                 .doesNotContain("<body id=\"original-page\">")
                 .contains("<title>Page I</title>")
+                .contains("<h1 class=\"page\">Page I</h1>")
                 .contains("<a class=\"home-link is-current\" href=\"page1.html\">")
                 .doesNotContain("<span class=\"prev\">")
                 .contains("<span class=\"next\"><a href=\"page2.html\">Page II</a></span>")
@@ -803,6 +805,7 @@ class ImplTest {
                 .contains("<link rel=\"stylesheet\" href=\"css/site.css\">") // include 'site.css'
                 .contains("<script src=\"js/site.js\"></script>") // include 'site.js'
                 .contains("<title>Page II</title>")
+                .contains("<h1 class=\"page\">Page II</h1>")
                 .contains("<a class=\"home-link\" href=\"page1.html\">")
                 .contains("<a href=\"page2.html\">Page II</a>")
                 .contains("<span class=\"prev\"><a href=\"page1.html\">Page I</a></span>")
@@ -815,6 +818,7 @@ class ImplTest {
                 .contains("<link rel=\"stylesheet\" href=\"css/site.css\">") // include 'site.css'
                 .contains("<script src=\"js/site.js\"></script>") // include 'site.js'
                 .contains("<title>Page III</title>")
+                .contains("<h1 class=\"page\">Page III</h1>")
                 .contains("<a class=\"home-link\" href=\"page1.html\">")
                 .contains("<span class=\"prev\"><a href=\"page2.html\">Page II</a></span>")
                 .contains("<span class=\"next\"><a href=\"chapter1/sec5.html\">The section 5</a></span>")
@@ -828,6 +832,7 @@ class ImplTest {
                 .contains("<link rel=\"stylesheet\" href=\"../css/site.css\">") // include 'site.css'
                 .contains("<script src=\"../js/site.js\"></script>") // include 'site.js'
                 .contains("<title>The section 5</title>")
+                .contains("<h1 class=\"page\">The section 5</h1>")
                 .contains("<a class=\"home-link\" href=\"../page1.html\">")
                 .contains("<li>First Chapter</li>")
                 .contains("<li><a href=\"sec5.html\">The section 5</a></li>")
@@ -840,6 +845,7 @@ class ImplTest {
                 .contains("<link rel=\"stylesheet\" href=\"../css/site.css\">") // include 'site.css'
                 .contains("<script src=\"../js/site.js\"></script>") // include 'site.js'
                 .contains("<title>The section 10</title>")
+                .contains("<h1 class=\"page\">The section 10</h1>")
                 .contains("<a class=\"home-link\" href=\"../page1.html\">")
                 .contains("<li>First Chapter</li>")
                 .contains("<li><a href=\"sec10.html\">The section 10</a></li>")
@@ -852,6 +858,7 @@ class ImplTest {
                 .contains("<link rel=\"stylesheet\" href=\"../css/site.css\">") // include 'site.css'
                 .contains("<script src=\"../js/site.js\"></script>") // include 'site.js'
                 .contains("<title>The section 1</title>")
+                .contains("<h1 class=\"page\">The section 1</h1>")
                 .contains("<a class=\"home-link\" href=\"../page1.html\">")
                 .contains("<li>First Chapter</li>")
                 .contains("<li><a href=\"sec1.html\">The section 1</a></li>")
@@ -864,6 +871,7 @@ class ImplTest {
                 .contains("<link rel=\"stylesheet\" href=\"../css/site.css\">") // include 'site.css'
                 .contains("<script src=\"../js/site.js\"></script>") // include 'site.js'
                 .contains("<title>CHAPTER 2!</title>")
+                .contains("<h1 class=\"page\">CHAPTER 2!</h1>")
                 .contains("<li><a href=\"./\">CHAPTER 2!</a></li>")
                 .contains("<a class=\"home-link\" href=\"../page1.html\">")
                 .contains("<span class=\"prev\"><a href=\"../chapter1/sec1.html\">The section 1</a></span>")
