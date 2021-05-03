@@ -44,6 +44,7 @@ import fr.jmini.utils.htmlpublish.helper.ConfigurationOptions;
 import fr.jmini.utils.htmlpublish.helper.ConfigurationPage;
 import fr.jmini.utils.htmlpublish.helper.ConfigurationPageOptions;
 import fr.jmini.utils.htmlpublish.helper.IndexHandling;
+import fr.jmini.utils.htmlpublish.helper.LinkToIndexHtmlStrategy;
 import fr.jmini.utils.htmlpublish.helper.RewriteStrategy;
 import fr.jmini.utils.pathorder.AbsolutePathComparator;
 import fr.jmini.utils.pathorder.Order;
@@ -113,9 +114,13 @@ public class Impl {
             if (originalOptions.getFontOutputFolder() != null) {
                 originalOptions.setFontOutputFolder(addTrailingSlash(originalOptions.getFontOutputFolder()));
             }
+            if (originalOptions.getLinkToIndexHtmlStrategy() == null) {
+                originalOptions.setLinkToIndexHtmlStrategy(LinkToIndexHtmlStrategy.TO_PARENT_FOLDER);
+            }
             param.setOptions(originalOptions);
         }
 
+        ConfigurationOptions configOptions = param.getOptions();
         if (config.getInputRootFolder() != null) {
             param.setInputRootFolder(config.getInputRootFolder()
                     .toAbsolutePath());
@@ -131,7 +136,7 @@ public class Impl {
             } else {
                 pageMappings = createPageMappings(param, pages);
             }
-            List<PageHolder> pageHolders = createPageHolders(pageMappings, null);
+            List<PageHolder> pageHolders = createPageHolders(pageMappings, null, configOptions.getLinkToIndexHtmlStrategy());
             setPreviousAndNext(pageHolders);
             param.setPageHolders(pageHolders);
         }
@@ -153,7 +158,6 @@ public class Impl {
             }
         }
 
-        ConfigurationOptions configOptions = param.getOptions();
         if (configOptions.getSiteName() != null) {
             param.setSiteName(configOptions.getSiteName());
         }
@@ -228,15 +232,15 @@ public class Impl {
         }
     }
 
-    private static List<PageHolder> createPageHolders(List<PageMapping> pageMappings, PageHolder parent) {
+    private static List<PageHolder> createPageHolders(List<PageMapping> pageMappings, PageHolder parent, LinkToIndexHtmlStrategy linkToIndexHtmlStrategy) {
         boolean uniqueRoot = (parent == null && pageMappings.size() == 1);
         List<PageHolder> pageHolders = pageMappings.stream()
-                .map(m -> createPageHolder(m, parent, uniqueRoot))
+                .map(m -> createPageHolder(m, parent, uniqueRoot, linkToIndexHtmlStrategy))
                 .collect(Collectors.toList());
         return pageHolders;
     }
 
-    private static PageHolder createPageHolder(PageMapping pageMapping, PageHolder parent, boolean uniqueRoot) {
+    private static PageHolder createPageHolder(PageMapping pageMapping, PageHolder parent, boolean uniqueRoot, LinkToIndexHtmlStrategy linkToIndexHtmlStrategy) {
         if (pageMapping.isInputFileExists()) {
             Document doc = createDocument(pageMapping.getInputFile());
             String title;
@@ -245,13 +249,13 @@ public class Impl {
             } else {
                 title = null;
             }
-            PageHolder pageHolder = new PageHolder(pageMapping, parent, uniqueRoot, doc, title);
-            pageHolder.setChildren(createPageHolders(pageMapping.getChildren(), pageHolder));
+            PageHolder pageHolder = new PageHolder(pageMapping, parent, uniqueRoot, doc, title, linkToIndexHtmlStrategy);
+            pageHolder.setChildren(createPageHolders(pageMapping.getChildren(), pageHolder, linkToIndexHtmlStrategy));
             return pageHolder;
         }
 
-        PageHolder pageHolder = new PageHolder(pageMapping, parent, uniqueRoot, null, null);
-        pageHolder.setChildren(createPageHolders(pageMapping.getChildren(), pageHolder));
+        PageHolder pageHolder = new PageHolder(pageMapping, parent, uniqueRoot, null, null, linkToIndexHtmlStrategy);
+        pageHolder.setChildren(createPageHolders(pageMapping.getChildren(), pageHolder, linkToIndexHtmlStrategy));
         return pageHolder;
     }
 
@@ -366,8 +370,7 @@ public class Impl {
                             if (Files.isDirectory(p)) {
 
                                 ConfigurationPage childPage = new ConfigurationPage()
-                                        .input(inputRootFolder.relativize(p)
-                                                .toString())
+                                        .input(relativizeToString(inputRootFolder, p))
                                         .includeChildFolders(true);
                                 return createPageMapping(inputRootFolder, outputRootFolder, pagesBaseFolder, childPage, pageOptions, Collections.emptyList());
                             }
@@ -462,10 +465,8 @@ public class Impl {
     }
 
     static void publishHtmlFile(Parameters param, PageHolder current) {
-        String relPathToOutputFolder = current.getOutputFile()
-                .getParent()
-                .relativize(param.getOutputRootFolder())
-                .toString();
+        String relPathToOutputFolder = relativizeToString(current.getOutputFile()
+                .getParent(), param.getOutputRootFolder());
         if (!relPathToOutputFolder.isEmpty()) {
             relPathToOutputFolder = relPathToOutputFolder + "/";
         }
@@ -483,7 +484,7 @@ public class Impl {
             throw new IllegalStateException("Could move file: " + current.getInputFile(), e);
         }
 
-        rewriteLinks(doc, param.getInputRootFolder(), current.getInputFile(), param.getOutputRootFolder(), current.getOutputFile(), param.getPageHolders());
+        rewriteLinks(doc, param.getInputRootFolder(), current.getInputFile(), param.getOutputRootFolder(), current.getOutputFile(), param.getPageHolders(), options.getLinkToIndexHtmlStrategy());
 
         Document outDoc;
         if (options.isCompleteSite()) {
@@ -1006,7 +1007,7 @@ public class Impl {
         return buffer.toByteArray();
     }
 
-    static void rewriteLinks(Document doc, Path inputFolder, Path inputFile, Path outputFolder, Path outputFile, List<PageHolder> pageHolders) {
+    static void rewriteLinks(Document doc, Path inputFolder, Path inputFile, Path outputFolder, Path outputFile, List<PageHolder> pageHolders, LinkToIndexHtmlStrategy linkToIndexHtmlStrategy) {
         Elements elements = doc.getElementsByTag("a");
         for (Element element : elements) {
             String attr = element.attr("href");
@@ -1046,22 +1047,31 @@ public class Impl {
                             });
 
                     //relative path to the outFile is the new value for href:
-                    String newAttr = createLinkHrefValue(outputFile, outputTargetFile, href.getAnchor());
+                    String newAttr = createLinkHrefValue(outputFile, outputTargetFile, href.getAnchor(), linkToIndexHtmlStrategy);
                     element.attr("href", newAttr);
                 }
             }
         }
     }
 
-    static String createLinkHrefValue(Path outputFile, Path outputTargetFile, String anchor) {
-        String hrefValue = outputFile.getParent()
-                .relativize(outputTargetFile)
-                .toString();
-        if (hrefValue.equals("index.html")) {
-            hrefValue = "./";
+    static String createLinkHrefValue(Path outputFile, Path outputTargetFile, String anchor, LinkToIndexHtmlStrategy linkToIndexHtmlStrategy) {
+        String hrefValue = relativizeToStringWithTrailingSlash(outputFile.getParent(), outputTargetFile);
+        if (linkToIndexHtmlStrategy == LinkToIndexHtmlStrategy.TO_PARENT_FOLDER) {
+            if (hrefValue.equals("index.html")) {
+                hrefValue = "./";
+            }
+            if (hrefValue.endsWith("/index.html")) {
+                hrefValue = hrefValue.substring(0, hrefValue.length() - "index.html".length());
+            }
         }
-        if (hrefValue.endsWith("/index.html")) {
-            hrefValue = hrefValue.substring(0, hrefValue.length() - "index.html".length());
+        if (linkToIndexHtmlStrategy == LinkToIndexHtmlStrategy.TO_FILE) {
+            if (hrefValue.equals("./")) {
+                hrefValue = "index.html";
+            }
+            if (hrefValue.endsWith("/")) {
+                hrefValue = hrefValue + "index.html";
+            }
+
         }
         if (anchor != null) {
             hrefValue = hrefValue + anchor;
@@ -1203,6 +1213,17 @@ public class Impl {
         return rootFolder.relativize(p)
                 .toString()
                 .replace('\\', '/');
+    }
+
+    static String relativizeToStringWithTrailingSlash(Path rootFolder, Path p) {
+        String result = relativizeToString(rootFolder, p);
+        if (result.isEmpty()) {
+            return "./";
+        }
+        if (Files.isDirectory(p)) {
+            return result + "/";
+        }
+        return result;
     }
 
     private static boolean isHtmlFile(Path path) {

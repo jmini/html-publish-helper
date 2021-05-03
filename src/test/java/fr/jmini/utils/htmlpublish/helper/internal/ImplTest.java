@@ -27,6 +27,7 @@ import fr.jmini.utils.htmlpublish.helper.ConfigurationOptions;
 import fr.jmini.utils.htmlpublish.helper.ConfigurationPage;
 import fr.jmini.utils.htmlpublish.helper.ConfigurationPageOptions;
 import fr.jmini.utils.htmlpublish.helper.IndexHandling;
+import fr.jmini.utils.htmlpublish.helper.LinkToIndexHtmlStrategy;
 import fr.jmini.utils.htmlpublish.helper.RewriteStrategy;
 import fr.jmini.utils.htmlpublish.helper.internal.Impl.HrefHolder;
 
@@ -87,7 +88,11 @@ class ImplTest {
         ConfigurationHolder config = new ConfigurationHolder()
                 .inputRootFolder(CASE1_FOLDER)
                 .outputRootFolder(outputFolder)
+                .options(new ConfigurationOptions()
+                        .linkToIndexHtmlStrategy(LinkToIndexHtmlStrategy.TO_FILE))
                 .addPage(new ConfigurationPage().input(CASE1_FILE))
+                .addPage(new ConfigurationPage().input("references/index.html")
+                        .output("f/index.html"))
                 .addCatalog(new ConfigurationCatalog().outputFile(catalog1))
                 .addCatalog(new ConfigurationCatalog().outputFile(catalog2)
                         .outputAction(OutputAction.MERGE_SILENTLY));
@@ -133,15 +138,14 @@ class ImplTest {
                 .contains("<img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==\" alt=\"Red dot\">")
                 .contains("<a href=\"folder/external.html\">ext page</a>")
                 .contains("<a href=\"folder/external.html#top\">top section</a>")
-                .contains("<a href=\"references/\">references</a>")
-                .contains("<a href=\"references/#property\">referenced property</a>")
+                .contains("<a href=\"f/index.html\">references</a>")
+                .contains("<a href=\"f/index.html#property\">referenced property</a>")
                 .contains("<a href=\"references/private.html\">private references</a>")
                 .contains("<a href=\"#title\">this page</a>")
                 .contains("<a href=\"http://github.com/jmini\">")
                 .contains("<a href=\"https://github.com/jmini\">")
                 .contains("<a href=\"file:///tmp/file.txt\">file.txt</a>")
                 .contains("<a href=\"mailto:info@company.com\">");
-
     }
 
     @Test
@@ -377,6 +381,7 @@ class ImplTest {
                 .options(new ConfigurationOptions()
                         .completeSite(true)
                         .createToc(true)
+                        .linkToIndexHtmlStrategy(LinkToIndexHtmlStrategy.TO_FILE)
                         .includeDefaultCss(false)
                         .includeDefaultJs(false)
                         .resourcesRewriteStrategy(RewriteStrategy.SHORT_SHA1_SUFFIX)
@@ -1031,6 +1036,7 @@ class ImplTest {
                         .sitePageSelector("div.sect1"))
                 .options(new ConfigurationOptions().completeSite(true)
                         .siteHomePath(CASE3_CHAPTER1_INDEX)
+                        .linkToIndexHtmlStrategy(LinkToIndexHtmlStrategy.TO_FILE)
                         .resourcesRewriteStrategy(RewriteStrategy.SHORT_SHA1_SUFFIX)
                         .footer(""))
                 .addCatalog(new ConfigurationCatalog().outputFile(catalog1));
@@ -1132,13 +1138,13 @@ class ImplTest {
                 .contains("<link rel=\"stylesheet\" href=\"css/site_22ae394.css\">") // include 'site.css'
                 .contains("<script src=\"js/site_99eac35.js\"></script>") // include 'site.js'
                 .contains("<title>Page - One</title>")
-                .contains("<a class=\"navbar-item\" href=\"chapter1/\">Chapter 1</a>")
-                .contains("<a class=\"home-link\" href=\"chapter1/\">")
+                .contains("<a class=\"navbar-item\" href=\"chapter1/index.html\">Chapter 1</a>")
+                .contains("<a class=\"home-link\" href=\"chapter1/index.html\">")
                 .doesNotContain("<span class=\"prev\">")
-                .contains("<span class=\"next\"><a href=\"chapter1/\">Chapter 1</a></span>")
+                .contains("<span class=\"next\"><a href=\"chapter1/index.html\">Chapter 1</a></span>")
                 .contains("<li class=\"nav-item is-active is-current-page\" data-depth=\"0\"><a class=\"nav-link\" href=\"one.html\">Page - One</a></li>") //nav-list
                 .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 1</span>") //nav-list
-                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"chapter2/\">CHAPTER 2</a>") //nav-list
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"chapter2/index.html\">CHAPTER 2</a>") //nav-list
                 .contains("<footer class=\"footer\">") //footer
                 .contains("<p></p>") //footer
         ;
@@ -1149,43 +1155,43 @@ class ImplTest {
                 .contains("<script src=\"../js/site_99eac35.js\"></script>") // include 'site.js'
                 .contains("<title>Chapter 1</title>")
                 .doesNotContain("<p>This is outside of sect1</p>") //because only "div.sect1" is used as page selector
-                .contains("<a class=\"navbar-item\" href=\"./\">Chapter 1</a>")
-                .contains("<a class=\"home-link is-current\" href=\"./\">")
+                .contains("<a class=\"navbar-item\" href=\"index.html\">Chapter 1</a>")
+                .contains("<a class=\"home-link is-current\" href=\"index.html\">")
                 .contains("<li>CHAPTER 1</li>") //breadcrumbs
-                .contains("<li><a href=\"./\">Chapter 1</a></li>") //breadcrumbs
+                .contains("<li><a href=\"index.html\">Chapter 1</a></li>") //breadcrumbs
                 .contains("<span class=\"prev\"><a href=\"../one.html\">Page - One</a></span>")
                 .contains("<span class=\"next\"><a href=\"sec5.html\">Chapter 1 - section 5</a></span>")
                 .contains("<li class=\"nav-item\" data-depth=\"0\"><a class=\"nav-link\" href=\"../one.html\">Page - One</a></li>") //nav-list
                 .contains("<li class=\"nav-item is-active is-current-path\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 1</span>") //nav-list
-                .contains("<li class=\"nav-item is-active is-current-page\" data-depth=\"1\"><a class=\"nav-link\" href=\"./\">Chapter 1</a></li>") //nav-list
+                .contains("<li class=\"nav-item is-active is-current-page\" data-depth=\"1\"><a class=\"nav-link\" href=\"index.html\">Chapter 1</a></li>") //nav-list
                 .contains("<li class=\"nav-item\" data-depth=\"1\"><a class=\"nav-link\" href=\"sec5.html\">Chapter 1 - section 5</a></li>\n") //nav-list
-                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"../chapter2/\">CHAPTER 2</a>"); //nav-list;
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"../chapter2/index.html\">CHAPTER 2</a>"); //nav-list;
 
         String content3 = Impl.readFile(chapter1Sec5File);
         assertThat(content3).isNotEmpty()
                 .contains("<link rel=\"stylesheet\" href=\"../css/site_22ae394.css\">") // include 'site.css'
                 .contains("<script src=\"../js/site_99eac35.js\"></script>") // include 'site.js'
                 .contains("<title>Chapter 1 - section 5</title>")
-                .contains("<a class=\"navbar-item\" href=\"./\">Chapter 1</a>")
-                .contains("<a class=\"home-link\" href=\"./\">")
+                .contains("<a class=\"navbar-item\" href=\"index.html\">Chapter 1</a>")
+                .contains("<a class=\"home-link\" href=\"index.html\">")
                 .contains("<li>CHAPTER 1</li>") //breadcrumbs
                 .contains("<li><a href=\"sec5.html\">Chapter 1 - section 5</a></li>") //breadcrumbs
                 .contains("This is in the content but not in main section") // the page `div.sect1` is not found, fallback on `body`
-                .contains("<span class=\"prev\"><a href=\"./\">Chapter 1</a></span>")
+                .contains("<span class=\"prev\"><a href=\"index.html\">Chapter 1</a></span>")
                 .contains("<span class=\"next\"><a href=\"sec10.html\">Chapter 1 - section 10</a></span>")
                 .contains("<li class=\"nav-item\" data-depth=\"0\"><a class=\"nav-link\" href=\"../one.html\">Page - One</a></li>") //nav-list
                 .contains("<li class=\"nav-item is-active is-current-path\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 1</span>") //nav-list
-                .contains("<li class=\"nav-item\" data-depth=\"1\"><a class=\"nav-link\" href=\"./\">Chapter 1</a></li>") //nav-list
+                .contains("<li class=\"nav-item\" data-depth=\"1\"><a class=\"nav-link\" href=\"index.html\">Chapter 1</a></li>") //nav-list
                 .contains("<li class=\"nav-item is-active is-current-page\" data-depth=\"1\"><a class=\"nav-link\" href=\"sec5.html\">Chapter 1 - section 5</a></li>\n") //nav-list
-                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"../chapter2/\">CHAPTER 2</a>"); //nav-list;
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"../chapter2/index.html\">CHAPTER 2</a>"); //nav-list;
 
         String content4 = Impl.readFile(chapter1Sec10File);
         assertThat(content4).isNotEmpty()
                 .contains("<link rel=\"stylesheet\" href=\"../css/site_22ae394.css\">") // include 'site.css'
                 .contains("<script src=\"../js/site_99eac35.js\"></script>") // include 'site.js'
                 .contains("<title>Chapter 1 - section 10</title>")
-                .contains("<a class=\"navbar-item\" href=\"./\">Chapter 1</a>")
-                .contains("<a class=\"home-link\" href=\"./\">")
+                .contains("<a class=\"navbar-item\" href=\"index.html\">Chapter 1</a>")
+                .contains("<a class=\"home-link\" href=\"index.html\">")
                 .contains("<li>CHAPTER 1</li>") //breadcrumbs
                 .contains("<li><a href=\"sec10.html\">Chapter 1 - section 10</a></li>") //breadcrumbs
                 .contains("This is in the content but not in main section") // the page `div.sect1` is not found, fallback on `body`
@@ -1197,46 +1203,46 @@ class ImplTest {
                 .contains("<link rel=\"stylesheet\" href=\"../css/site_22ae394.css\">") // include 'site.css'
                 .contains("<script src=\"../js/site_99eac35.js\"></script>") // include 'site.js'
                 .contains("<title>Chapter 1 - section 1</title>")
-                .contains("<a class=\"home-link\" href=\"./\">")
+                .contains("<a class=\"home-link\" href=\"index.html\">")
                 .contains("<li>CHAPTER 1</li>") //breadcrumbs
                 .contains("<li><a href=\"sec1.html\">Chapter 1 - section 1</a></li>") //breadcrumbs
                 .contains("This is in the content but not in main section") // the page `div.sect1` is not found, fallback on `body`
                 .contains("<span class=\"prev\"><a href=\"sec10.html\">Chapter 1 - section 10</a></span>")
-                .contains("<span class=\"next\"><a href=\"../chapter2/\">CHAPTER 2</a></span>");
+                .contains("<span class=\"next\"><a href=\"../chapter2/index.html\">CHAPTER 2</a></span>");
 
         String content6 = Impl.readFile(chapter2File);
         assertThat(content6).isNotEmpty()
                 .contains("<link rel=\"stylesheet\" href=\"../css/site_22ae394.css\">") // include 'site.css'
                 .contains("<script src=\"../js/site_99eac35.js\"></script>") // include 'site.js'
                 .contains("<title>CHAPTER 2</title>")
-                .contains("<a class=\"navbar-item\" href=\"../chapter1/\">Chapter 1</a>")
-                .contains("<a class=\"home-link\" href=\"../chapter1/\">")
-                .contains("<li><a href=\"./\">CHAPTER 2</a></li>") //breadcrumbs
+                .contains("<a class=\"navbar-item\" href=\"../chapter1/index.html\">Chapter 1</a>")
+                .contains("<a class=\"home-link\" href=\"../chapter1/index.html\">")
+                .contains("<li><a href=\"index.html\">CHAPTER 2</a></li>") //breadcrumbs
                 .contains("<span class=\"prev\"><a href=\"../chapter1/sec1.html\">Chapter 1 - section 1</a></span>")
-                .contains("<span class=\"next\"><a href=\"sub-a/\">Article A</a></span>");
+                .contains("<span class=\"next\"><a href=\"sub-a/index.html\">Article A</a></span>");
 
         String content7 = Impl.readFile(chapter2SubA);
         assertThat(content7).isNotEmpty()
                 .contains("<link rel=\"stylesheet\" href=\"../../css/site_22ae394.css\">") // include 'site.css'
                 .contains("<script src=\"../../js/site_99eac35.js\"></script>") // include 'site.js'
                 .contains("<title>Article A</title>")
-                .contains("<a class=\"navbar-item\" href=\"../../chapter1/\">Chapter 1</a>")
-                .contains("<a class=\"home-link\" href=\"../../chapter1/\">")
-                .contains("<li><a href=\"../\">CHAPTER 2</a></li>") //breadcrumbs
-                .contains("<li><a href=\"./\">Article A</a></li>") //breadcrumbs
-                .contains("<span class=\"prev\"><a href=\"../\">CHAPTER 2</a></span>")
-                .contains("<span class=\"next\"><a href=\"../sub-b/\">Article B</a></span>");
+                .contains("<a class=\"navbar-item\" href=\"../../chapter1/index.html\">Chapter 1</a>")
+                .contains("<a class=\"home-link\" href=\"../../chapter1/index.html\">")
+                .contains("<li><a href=\"../index.html\">CHAPTER 2</a></li>") //breadcrumbs
+                .contains("<li><a href=\"index.html\">Article A</a></li>") //breadcrumbs
+                .contains("<span class=\"prev\"><a href=\"../index.html\">CHAPTER 2</a></span>")
+                .contains("<span class=\"next\"><a href=\"../sub-b/index.html\">Article B</a></span>");
 
         String content8 = Impl.readFile(chapter2SubB);
         assertThat(content8).isNotEmpty()
                 .contains("<link rel=\"stylesheet\" href=\"../../css/site_22ae394.css\">") // include 'site.css'
                 .contains("<script src=\"../../js/site_99eac35.js\"></script>") // include 'site.js'
                 .contains("<title>Article B</title>")
-                .contains("<a class=\"navbar-item\" href=\"../../chapter1/\">Chapter 1</a>")
-                .contains("<a class=\"home-link\" href=\"../../chapter1/\">")
-                .contains("<li><a href=\"../\">CHAPTER 2</a></li>") //breadcrumbs
-                .contains("<li><a href=\"./\">Article B</a></li>") //breadcrumbs
-                .contains("<span class=\"prev\"><a href=\"../sub-a/\">Article A</a></span>")
+                .contains("<a class=\"navbar-item\" href=\"../../chapter1/index.html\">Chapter 1</a>")
+                .contains("<a class=\"home-link\" href=\"../../chapter1/index.html\">")
+                .contains("<li><a href=\"../index.html\">CHAPTER 2</a></li>") //breadcrumbs
+                .contains("<li><a href=\"index.html\">Article B</a></li>") //breadcrumbs
+                .contains("<span class=\"prev\"><a href=\"../sub-a/index.html\">Article A</a></span>")
                 .doesNotContain("<span class=\"next\">");
     }
 
@@ -2132,6 +2138,38 @@ class ImplTest {
 
         assertThat(Impl.createRelativeFilePath(RewriteStrategy.SHORT_SHA1_SUB_FOLDER, "sub/", "image.png", shortSha1)).isEqualTo("sub/1cf2514/image.png");
         assertThat(Impl.createRelativeFilePath(RewriteStrategy.SHORT_SHA1_SUB_FOLDER, "sub/", "file", shortSha1)).isEqualTo("sub/1cf2514/file");
+    }
+
+    @Test
+    void testCreateLinkHrefValue() {
+        Path index = CASE3_FOLDER.resolve("index.html");
+        Path one = CASE3_FOLDER.resolve(CASE3_ONE);
+        Path two = CASE3_FOLDER.resolve(CASE3_TWO);
+        Path chapter1 = CASE3_FOLDER.resolve(CASE3_CHAPTER1);
+        Path chapter1Index = CASE3_FOLDER.resolve(CASE3_CHAPTER1_INDEX);
+        Path chapter1Sec1 = CASE3_FOLDER.resolve(CASE3_CHAPTER1_SEC1);
+
+        String anchor = "#test";
+
+        assertThat(Impl.createLinkHrefValue(one, two, null, LinkToIndexHtmlStrategy.TO_PARENT_FOLDER)).isEqualTo(CASE3_TWO);
+        assertThat(Impl.createLinkHrefValue(two, one, null, LinkToIndexHtmlStrategy.TO_PARENT_FOLDER)).isEqualTo(CASE3_ONE);
+        assertThat(Impl.createLinkHrefValue(two, one, anchor, LinkToIndexHtmlStrategy.TO_PARENT_FOLDER)).isEqualTo(CASE3_ONE + anchor);
+        assertThat(Impl.createLinkHrefValue(one, chapter1Index, null, LinkToIndexHtmlStrategy.TO_PARENT_FOLDER)).isEqualTo(CASE3_CHAPTER1 + "/");
+        assertThat(Impl.createLinkHrefValue(one, chapter1Index, anchor, LinkToIndexHtmlStrategy.TO_PARENT_FOLDER)).isEqualTo(CASE3_CHAPTER1 + "/" + anchor);
+        assertThat(Impl.createLinkHrefValue(chapter1Sec1, chapter1Index, null, LinkToIndexHtmlStrategy.TO_PARENT_FOLDER)).isEqualTo("./");
+        assertThat(Impl.createLinkHrefValue(chapter1Sec1, index, null, LinkToIndexHtmlStrategy.TO_PARENT_FOLDER)).isEqualTo("../");
+
+        assertThat(Impl.createLinkHrefValue(one, two, null, LinkToIndexHtmlStrategy.TO_FILE)).isEqualTo(CASE3_TWO);
+        assertThat(Impl.createLinkHrefValue(two, one, null, LinkToIndexHtmlStrategy.TO_FILE)).isEqualTo(CASE3_ONE);
+        assertThat(Impl.createLinkHrefValue(two, one, anchor, LinkToIndexHtmlStrategy.TO_FILE)).isEqualTo(CASE3_ONE + anchor);
+        assertThat(Impl.createLinkHrefValue(one, chapter1Index, null, LinkToIndexHtmlStrategy.TO_FILE)).isEqualTo(CASE3_CHAPTER1 + "/index.html");
+        assertThat(Impl.createLinkHrefValue(one, chapter1Index, anchor, LinkToIndexHtmlStrategy.TO_FILE)).isEqualTo(CASE3_CHAPTER1 + "/index.html" + anchor);
+        assertThat(Impl.createLinkHrefValue(one, chapter1, null, LinkToIndexHtmlStrategy.TO_FILE)).isEqualTo(CASE3_CHAPTER1 + "/index.html");
+        assertThat(Impl.createLinkHrefValue(one, chapter1, anchor, LinkToIndexHtmlStrategy.TO_FILE)).isEqualTo(CASE3_CHAPTER1 + "/index.html" + anchor);
+        assertThat(Impl.createLinkHrefValue(chapter1Sec1, chapter1Index, null, LinkToIndexHtmlStrategy.TO_FILE)).isEqualTo("index.html");
+        assertThat(Impl.createLinkHrefValue(chapter1Sec1, chapter1, null, LinkToIndexHtmlStrategy.TO_FILE)).isEqualTo("index.html");
+        assertThat(Impl.createLinkHrefValue(chapter1Sec1, index, null, LinkToIndexHtmlStrategy.TO_FILE)).isEqualTo("../index.html");
+        assertThat(Impl.createLinkHrefValue(chapter1Sec1, CASE3_FOLDER, null, LinkToIndexHtmlStrategy.TO_FILE)).isEqualTo("../index.html");
     }
 
     private static String renderFolder(Path folder) {

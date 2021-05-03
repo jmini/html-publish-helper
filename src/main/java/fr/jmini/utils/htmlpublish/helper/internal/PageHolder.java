@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 import org.jsoup.nodes.Document;
 
 import fr.jmini.utils.htmlpublish.helper.ConfigurationPageOptions;
+import fr.jmini.utils.htmlpublish.helper.LinkToIndexHtmlStrategy;
 
 class PageHolder implements Link {
     private PageMapping pageMapping;
@@ -19,14 +20,16 @@ class PageHolder implements Link {
     private PageHolder previous;
     private PageHolder next;
     private String title;
+    private LinkToIndexHtmlStrategy linkToIndexHtmlStrategy;
 
-    public PageHolder(PageMapping pageMapping, PageHolder parent, boolean uniqueRoot, Document document, String title) {
+    public PageHolder(PageMapping pageMapping, PageHolder parent, boolean uniqueRoot, Document document, String title, LinkToIndexHtmlStrategy linkToIndexHtmlStrategy) {
         this.pageMapping = pageMapping;
         this.parent = parent;
         this.uniqueRoot = uniqueRoot;
         this.children = new ArrayList<>();
         this.document = document;
         this.title = title;
+        this.linkToIndexHtmlStrategy = linkToIndexHtmlStrategy;
     }
 
     public Path getInputFile() {
@@ -98,7 +101,7 @@ class PageHolder implements Link {
 
     @Override
     public String getHrefValue(Path fromCurrentOutputPath) {
-        return Impl.createLinkHrefValue(fromCurrentOutputPath, getOutputFile(), null);
+        return Impl.createLinkHrefValue(fromCurrentOutputPath, getOutputFile(), null, linkToIndexHtmlStrategy);
     }
 
     public Stream<PageHolder> flattened() {

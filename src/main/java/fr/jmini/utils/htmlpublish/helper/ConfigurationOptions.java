@@ -13,6 +13,11 @@ public class ConfigurationOptions {
     private String pagesBaseFolder;
 
     /**
+     * Strategy for links to `index.html` files.
+     */
+    private LinkToIndexHtmlStrategy linkToIndexHtmlStrategy = LinkToIndexHtmlStrategy.TO_PARENT_FOLDER;
+
+    /**
      * Name of folder relative to the {@link ConfigurationHolder#getOutputRootFolder()} for images.
      */
     private String imagesOutputFolder = "images/";
@@ -95,6 +100,19 @@ public class ConfigurationOptions {
 
     public ConfigurationOptions pagesBaseFolder(String baseFolder) {
         setPagesBaseFolder(baseFolder);
+        return this;
+    }
+
+    public LinkToIndexHtmlStrategy getLinkToIndexHtmlStrategy() {
+        return linkToIndexHtmlStrategy;
+    }
+
+    public void setLinkToIndexHtmlStrategy(LinkToIndexHtmlStrategy linkToIndexHtmlStrategy) {
+        this.linkToIndexHtmlStrategy = linkToIndexHtmlStrategy;
+    }
+
+    public ConfigurationOptions linkToIndexHtmlStrategy(LinkToIndexHtmlStrategy strategy) {
+        setLinkToIndexHtmlStrategy(strategy);
         return this;
     }
 

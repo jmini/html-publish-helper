@@ -92,6 +92,7 @@ The `outputRootFolder` is mandatory and defines where the output will be located
 === Options
 
 * `clearOutputRootFolder`: indicates if the `outputRootFolder` must be deleted before starting the publishing or not.
+* `linkToIndexHtmlStrategy`: controls how the links to `index.html` are written. Either as link to the parent folder or as link to the file.
 * `pagesBaseFolder`: when folders are used, the approach of the link:https://jmini.github.io/path-order/[path-order] project with the `pages.yaml` can be used to control page ordering. If those yaml files are not in the same folder than the `*.html` files (imagine keeping them next to your asciiDoc sources) the `pagesBaseFolder` option can be used to define the relative path where the `pages.yaml` files can be found.
 
 ==== Resources options
