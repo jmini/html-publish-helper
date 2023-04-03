@@ -1,5 +1,19 @@
 package fr.jmini.utils.htmlpublish.helper.internal;
 
+import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog.OutputAction;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog.Strategy;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationHolder;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationOptions;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationPage;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationPageOptions;
+import fr.jmini.utils.htmlpublish.helper.IndexHandling;
+import fr.jmini.utils.htmlpublish.helper.LinkToIndexHtmlStrategy;
+import fr.jmini.utils.htmlpublish.helper.RewriteStrategy;
+import fr.jmini.utils.pathorder.AbsolutePathComparator;
+import fr.jmini.utils.pathorder.Order;
+import fr.jmini.utils.pathorder.Pages;
+import fr.jmini.utils.pathorder.SortConfig;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +41,6 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.DocumentType;
@@ -36,20 +49,7 @@ import org.jsoup.select.Elements;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
-import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog.OutputAction;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog.Strategy;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationHolder;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationOptions;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationPage;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationPageOptions;
-import fr.jmini.utils.htmlpublish.helper.IndexHandling;
-import fr.jmini.utils.htmlpublish.helper.LinkToIndexHtmlStrategy;
-import fr.jmini.utils.htmlpublish.helper.RewriteStrategy;
-import fr.jmini.utils.pathorder.AbsolutePathComparator;
-import fr.jmini.utils.pathorder.Order;
-import fr.jmini.utils.pathorder.Pages;
-import fr.jmini.utils.pathorder.SortConfig;
+
 
 public class Impl {
 
@@ -475,11 +475,13 @@ public class Impl {
 
         ConfigurationOptions options = param.getOptions();
         try {
-            Files.createDirectories(current.getOutputFile()
-                    .getParent());
-            moveAndCopy(doc, current.getInputFile(), param, relPathToOutputFolder, options.getImagesOutputFolder(), "img", (e) -> true, "src");
-            moveAndCopy(doc, current.getInputFile(), param, relPathToOutputFolder, options.getCssOutputFolder(), "link", (e) -> "stylesheet".equalsIgnoreCase(e.attr("rel")), "href");
-            moveAndCopy(doc, current.getInputFile(), param, relPathToOutputFolder, options.getJavascriptOutputFolder(), "script", (e) -> true, "src");
+            List<String> imgFileNames = moveAndCopy(doc, current.getInputFile(), param, relPathToOutputFolder, options.getImagesOutputFolder(), "img", (e) -> true, "src");
+            current.setCssFileNames(
+                    moveAndCopy(doc, current.getInputFile(), param, relPathToOutputFolder, options.getCssOutputFolder(), "link", (e) -> "stylesheet".equalsIgnoreCase(e.attr("rel")), "href")
+            );
+            current.setJsFileNames(
+                    moveAndCopy(doc, current.getInputFile(), param, relPathToOutputFolder, options.getJavascriptOutputFolder(), "script", (e) -> true, "src")
+            );
         } catch (IOException e) {
             throw new IllegalStateException("Could move file: " + current.getInputFile(), e);
         }
@@ -533,6 +535,13 @@ public class Impl {
             head.appendElement("link")
                     .attr("rel", "stylesheet")
                     .attr("href", createFilePath(relPathToOutputFolder, resourceMapping.get(DEFAULT_CSS_NAME)));
+        } else {
+            List<String> cssFileNames = current.getCssFileNames();
+            for (String css: cssFileNames) {
+                head.appendElement("link")
+                    .attr("rel", "stylesheet")
+                    .attr("href", css);
+            }
         }
         Element body = html.appendElement("body")
                 .addClass("article");
@@ -655,6 +664,12 @@ public class Impl {
         if (options.isIncludeDefaultJs()) {
             body.appendElement("script")
                     .attr("src", createFilePath(relPathToOutputFolder, resourceMapping.get(DEFAULT_JS_NAME)));
+        } else {
+            List<String> jsFileNames = current.getJsFileNames();
+            for (String src : jsFileNames) {
+                body.appendElement("script")
+                        .attr("src", src);
+            }
         }
         return doc;
     }
@@ -871,7 +886,9 @@ public class Impl {
         }
     }
 
-    private static void moveAndCopy(Document doc, Path inputFile, Parameters param, String relPathToOutputFolder, String subPath, String tagName, Function<Element, Boolean> filter, String attributeName) throws IOException {
+    private static List<String> moveAndCopy(Document doc, Path inputFile, Parameters param, String relPathToOutputFolder, String subPath, String tagName, Function<Element, Boolean> filter, String attributeName) throws IOException {
+        List<String> newFileNames = new ArrayList<>();
+
         Path outputRootFolder = param.getOutputRootFolder();
         RewriteStrategy strategy = param.getOptions()
                 .getResourcesRewriteStrategy();
@@ -910,9 +927,11 @@ public class Impl {
                     }
                     String newAttr = createFilePath(relPathToOutputFolder, relativeFileName);
                     element.attr(attributeName, newAttr);
+                    newFileNames.add(relativeFileName);
                 }
             }
         }
+        return newFileNames;
     }
 
     static String createFileHash(RewriteStrategy strategy, byte[] bytes) {

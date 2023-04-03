@@ -1,14 +1,14 @@
 package fr.jmini.utils.htmlpublish.helper.internal;
 
+import fr.jmini.utils.htmlpublish.helper.ConfigurationPageOptions;
+import fr.jmini.utils.htmlpublish.helper.LinkToIndexHtmlStrategy;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.jsoup.nodes.Document;
 
-import fr.jmini.utils.htmlpublish.helper.ConfigurationPageOptions;
-import fr.jmini.utils.htmlpublish.helper.LinkToIndexHtmlStrategy;
+
 
 class PageHolder implements Link {
     private PageMapping pageMapping;
@@ -20,6 +20,8 @@ class PageHolder implements Link {
     private PageHolder previous;
     private PageHolder next;
     private String title;
+    private List<String> cssFileNames;
+    private List<String> jsFileNames;
     private LinkToIndexHtmlStrategy linkToIndexHtmlStrategy;
 
     public PageHolder(PageMapping pageMapping, PageHolder parent, boolean uniqueRoot, Document document, String title, LinkToIndexHtmlStrategy linkToIndexHtmlStrategy) {
@@ -98,6 +100,17 @@ class PageHolder implements Link {
     public boolean isTitleSet() {
         return pageMapping.getTitle() != null || title != null;
     }
+
+    public void setCssFileNames(List<String> cssFileNames) {
+        this.cssFileNames = cssFileNames;
+    }
+
+    public List<String> getCssFileNames() { return cssFileNames; }
+
+    public void setJsFileNames(List<String> jsFileNames) {
+        this.jsFileNames = jsFileNames;
+    }
+    public List<String> getJsFileNames() { return jsFileNames; }
 
     @Override
     public String getHrefValue(Path fromCurrentOutputPath) {

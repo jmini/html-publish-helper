@@ -3,22 +3,6 @@ package fr.jmini.utils.htmlpublish.helper.internal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.junit.jupiter.api.Test;
-
 import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog;
 import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog.OutputAction;
 import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog.Strategy;
@@ -30,6 +14,19 @@ import fr.jmini.utils.htmlpublish.helper.IndexHandling;
 import fr.jmini.utils.htmlpublish.helper.LinkToIndexHtmlStrategy;
 import fr.jmini.utils.htmlpublish.helper.RewriteStrategy;
 import fr.jmini.utils.htmlpublish.helper.internal.Impl.HrefHolder;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
+
+
 
 class ImplTest {
     private static final Path INPUT_FOLDER = Paths.get("src/test/resources/input");
@@ -410,8 +407,11 @@ class ImplTest {
 
         String content1 = Impl.readFile(page1File);
         assertThat(content1).isNotEmpty()
-                .doesNotContain("href=\"static/css/site.css\"") // include 'site.css'
-                .doesNotContain("src=\"assets/js/site.js\"") // include 'site.js'
+                .doesNotContain("href=\"static/css/site.css\"") // don't include 'site.css'
+                .doesNotContain("src=\"static/js/site.js\"") // don't include 'site.js'
+                .doesNotContain("href=\"static/css/page_c1a4d1f.css\"")
+                .contains("href=\"static/css/file_f65f9d4.css\"")
+                .contains("src=\"static/js/empty_9f7f886.js\"")
                 .contains("<title>Page</title>")
                 .contains("<h1 class=\"page\">Page</h1>")
                 .contains("<a class=\"navbar-item\" href=\"page.html\">Page</a>")
