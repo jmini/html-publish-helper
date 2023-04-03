@@ -1,19 +1,5 @@
 package fr.jmini.utils.htmlpublish.helper.internal;
 
-import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog.OutputAction;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog.Strategy;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationHolder;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationOptions;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationPage;
-import fr.jmini.utils.htmlpublish.helper.ConfigurationPageOptions;
-import fr.jmini.utils.htmlpublish.helper.IndexHandling;
-import fr.jmini.utils.htmlpublish.helper.LinkToIndexHtmlStrategy;
-import fr.jmini.utils.htmlpublish.helper.RewriteStrategy;
-import fr.jmini.utils.pathorder.AbsolutePathComparator;
-import fr.jmini.utils.pathorder.Order;
-import fr.jmini.utils.pathorder.Pages;
-import fr.jmini.utils.pathorder.SortConfig;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +27,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.DocumentType;
@@ -49,7 +36,20 @@ import org.jsoup.select.Elements;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
-
+import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog.OutputAction;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationCatalog.Strategy;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationHolder;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationOptions;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationPage;
+import fr.jmini.utils.htmlpublish.helper.ConfigurationPageOptions;
+import fr.jmini.utils.htmlpublish.helper.IndexHandling;
+import fr.jmini.utils.htmlpublish.helper.LinkToIndexHtmlStrategy;
+import fr.jmini.utils.htmlpublish.helper.RewriteStrategy;
+import fr.jmini.utils.pathorder.AbsolutePathComparator;
+import fr.jmini.utils.pathorder.Order;
+import fr.jmini.utils.pathorder.Pages;
+import fr.jmini.utils.pathorder.SortConfig;
 
 public class Impl {
 
