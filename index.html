@@ -443,8 +443,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h1>HtmlPublish Helper</h1>
 <div class="details">
 <span id="author" class="author">Jeremie Bresson</span><br>
-<span id="revnumber">version 2.1.0,</span>
-<span id="revdate">2021-05-03</span>
+<span id="revnumber">version 2.2.0,</span>
+<span id="revdate">2023-05-02</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -694,16 +694,22 @@ This can be controlled with <code>resourcesRewriteStrategy</code>.</p>
 <p><code>includeDefaultCss</code>: indicates if the default css (<code>site.css</code>) is included during publication of the complete site. See <a href="https://gitlab.com/antora/antora-ui-default">Antora Default UI</a></p>
 </li>
 <li>
+<p><code>includeOriginalCss</code>: indicates if the css from the orininal document has to be preserved</p>
+</li>
+<li>
 <p><code>includeDefaultJs</code>: indicates if the default javascript (<code>site.js</code>) is included during publication of the complete site. See <a href="https://gitlab.com/antora/antora-ui-default">Antora Default UI</a></p>
+</li>
+<li>
+<p><code>includeOriginalJs</code>: indicates if the javascript files and the inline <code>&lt;script&gt;</code> sections from the orininal document has to be preserved</p>
 </li>
 <li>
 <p><code>createToc</code>: controls if the table of content is created during, note that the default javascript is also creating the table of content dynamically</p>
 </li>
 <li>
-<p><code>siteName</code>: name of the site, if omitted the title is computed depending on the <code>siteHomePath</code> value. If the value is referencing a local page, its title is used. If the value is a distant URL, the name of the <code>inputRootFolder</code> is used.</p>
+<p><code>siteName</code>: name of the site, if omitted the title is computed depending on the <code>siteHomePath</code> value. If the value is referencing a local page, its title is used. If the value is a distant URL, the name of the <code>inputRootFolder</code> is used</p>
 </li>
 <li>
-<p><code>siteHomePath</code>: path to the home of the site. It can be either an absolute URL, or a page relative to the <code>inputRootFolder</code>. When nothing is specified the first page of the tree is used.</p>
+<p><code>siteHomePath</code>: path to the home of the site. It can be either an absolute URL, or a page relative to the <code>inputRootFolder</code>. When nothing is specified the first page of the tree is used</p>
 </li>
 <li>
 <p><code>footer</code>: footer of the site</p>
@@ -784,7 +790,7 @@ You can define multiple catalogs if you have to.</p>
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
   <span class="tag">&lt;groupId&gt;</span>fr.jmini.utils<span class="tag">&lt;/groupId&gt;</span>
   <span class="tag">&lt;artifactId&gt;</span>html-publish-helper<span class="tag">&lt;/artifactId&gt;</span>
-  <span class="tag">&lt;version&gt;</span>2.1.0<span class="tag">&lt;/version&gt;</span>
+  <span class="tag">&lt;version&gt;</span>2.2.0<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -908,8 +914,8 @@ ssh-add ~/.ssh/id_rsa</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 2.1.0<br>
-Last updated 2021-05-03 12:49:00 +0200
+Version 2.2.0<br>
+Last updated 2023-05-02 09:20:45 +0200
 </div>
 </div>
 <style>
