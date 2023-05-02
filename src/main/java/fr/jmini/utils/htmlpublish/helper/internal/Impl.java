@@ -474,12 +474,22 @@ public class Impl {
         Document doc = current.getDocument();
 
         ConfigurationOptions options = param.getOptions();
+        List<Element> cssElements;
+        List<Element> jsElements;
         try {
             Files.createDirectories(current.getOutputFile()
                     .getParent());
             moveAndCopy(doc, current.getInputFile(), param, relPathToOutputFolder, options.getImagesOutputFolder(), "img", (e) -> true, "src");
-            moveAndCopy(doc, current.getInputFile(), param, relPathToOutputFolder, options.getCssOutputFolder(), "link", (e) -> "stylesheet".equalsIgnoreCase(e.attr("rel")), "href");
-            moveAndCopy(doc, current.getInputFile(), param, relPathToOutputFolder, options.getJavascriptOutputFolder(), "script", (e) -> true, "src");
+            if (!options.isCompleteSite() || options.isIncludeOriginalCss()) {
+                cssElements = moveAndCopy(doc, current.getInputFile(), param, relPathToOutputFolder, options.getCssOutputFolder(), "link", (e) -> "stylesheet".equalsIgnoreCase(e.attr("rel")), "href");
+            } else {
+                cssElements = Collections.emptyList();
+            }
+            if (!options.isCompleteSite() || options.isIncludeOriginalJs()) {
+                jsElements = moveAndCopy(doc, current.getInputFile(), param, relPathToOutputFolder, options.getJavascriptOutputFolder(), "script", (e) -> true, "src");
+            } else {
+                jsElements = Collections.emptyList();
+            }
         } catch (IOException e) {
             throw new IllegalStateException("Could move file: " + current.getInputFile(), e);
         }
@@ -489,19 +499,24 @@ public class Impl {
         Document outDoc;
         if (options.isCompleteSite()) {
             Map<String, String> resourceMapping = copyResources(param);
-
-            Element element;
+            final Element elementToInsert;
             if (current.getPageOptions()
                     .getSitePageSelector() != null) {
-                element = doc.selectFirst(current.getPageOptions()
+                Element findElement = doc.selectFirst(current.getPageOptions()
                         .getSitePageSelector());
-                if (element == null) {
-                    element = doc.selectFirst("body");
+                if (findElement == null) {
+                    elementToInsert = doc.selectFirst("body");
+                } else {
+                    elementToInsert = findElement;
                 }
             } else {
-                element = doc.selectFirst("body");
+                elementToInsert = doc.selectFirst("body");
             }
-            outDoc = createOutDoc(param, relPathToOutputFolder, resourceMapping, current, element);
+
+            List<Element> additionalElements = new ArrayList<>();
+            addElementsNotInElementToInsert(cssElements, elementToInsert, additionalElements);
+            addElementsNotInElementToInsert(jsElements, elementToInsert, additionalElements);
+            outDoc = createOutDoc(param, relPathToOutputFolder, resourceMapping, current, elementToInsert, additionalElements);
 
         } else {
             outDoc = doc;
@@ -513,7 +528,14 @@ public class Impl {
         writeFile(current.getOutputFile(), content);
     }
 
-    static Document createOutDoc(Parameters param, String relPathToOutputFolder, Map<String, String> resourceMapping, PageHolder current, Element elementToInsert) {
+    private static void addElementsNotInElementToInsert(List<Element> elements, final Element elementToInsert, List<Element> additionalElements) {
+        elements.stream()
+                .filter(e -> !e.parents()
+                        .contains(elementToInsert))
+                .forEach(additionalElements::add);
+    }
+
+    static Document createOutDoc(Parameters param, String relPathToOutputFolder, Map<String, String> resourceMapping, PageHolder current, Element elementToInsert, List<Element> additionalElements) {
         ConfigurationOptions options = param.getOptions();
 
         String home = param.getSiteHomeLink()
@@ -656,7 +678,37 @@ public class Impl {
             body.appendElement("script")
                     .attr("src", createFilePath(relPathToOutputFolder, resourceMapping.get(DEFAULT_JS_NAME)));
         }
+        for (Element element : additionalElements) {
+            Element target = findTagetElement(element, doc);
+            if (target != null) {
+                target.appendChild(element.clone());
+            } else {
+                String parentChain = element.parents()
+                        .stream()
+                        .map(Element::tagName)
+                        .collect(Collectors.joining("->"));
+                throw new IllegalStateException("Can not add element '" + element + "' with parents: '" + parentChain + "' into the target document");
+            }
+        }
         return doc;
+    }
+
+    private static Element findTagetElement(Element element, Document doc) {
+        Element target = doc;
+        Elements parents = element.parents();
+        for (int i = parents.size() - 1; i >= 0; i--) {
+            Element e = parents.get(i);
+            Optional<Element> find = target.children()
+                    .stream()
+                    .filter(c -> Objects.equals(e.tagName(), c.tagName()))
+                    .findFirst();
+            if (find.isPresent()) {
+                target = find.get();
+            } else {
+                return null;
+            }
+        }
+        return target;
     }
 
     private static void appendNavList(int level, List<PageHolder> pages, PageHolder current, Element parent) {
@@ -871,7 +923,9 @@ public class Impl {
         }
     }
 
-    private static void moveAndCopy(Document doc, Path inputFile, Parameters param, String relPathToOutputFolder, String subPath, String tagName, Function<Element, Boolean> filter, String attributeName) throws IOException {
+    private static List<Element> moveAndCopy(Document doc, Path inputFile, Parameters param, String relPathToOutputFolder, String subPath, String tagName, Function<Element, Boolean> filter, String attributeName) throws IOException {
+        List<Element> result = new ArrayList<>();
+
         Path outputRootFolder = param.getOutputRootFolder();
         RewriteStrategy strategy = param.getOptions()
                 .getResourcesRewriteStrategy();
@@ -911,8 +965,10 @@ public class Impl {
                     String newAttr = createFilePath(relPathToOutputFolder, relativeFileName);
                     element.attr(attributeName, newAttr);
                 }
+                result.add(element);
             }
         }
+        return result;
     }
 
     static String createFileHash(RewriteStrategy strategy, byte[] bytes) {

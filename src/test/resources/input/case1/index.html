@@ -7,25 +7,26 @@
 </head>
 
 <body>
-    <h1 id="title">Index Page</h1>
-    <p>(png)<br /><img src="../imgs/image.png" alt="a test png image"></p>
-    <p>(svg)<br /><img src="../imgs/img.svg" alt="a test svg image"></p>
-    <p id="demo"></p>
-    <p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==" alt="Red dot" /></p>
-    <p>Link to the <a href="folder/external.html">ext page</a></p>
-    <p>Link to the <a href="folder/external.html#top">top section</a></p>
-    <p>Link to the <a href="references/">references</a></p>
-    <p>Link to the <a href="references/#property">referenced property</a></p>
-    <p>Link to the <a href="references/private.html">private references</a></p>
-    <p>Link to the <a href="#title">this page</a></p>
-    </hr>
-    <p>External link: <a href="http://github.com/jmini">GitHub</a></p>
-    <p>External link: <a href="https://github.com/jmini">GitHub</a></p>
-    <p>Link to a file: <a href="file:///tmp/file.txt">file.txt</a></p>
-    <p>Mailto link: <a href="mailto:info@company.com">info@company.com</a></p>
+    <div id="content">
+        <h1 id="title">Index Page</h1>
+        <p>(png)<br /><img src="../imgs/image.png" alt="a test png image"></p>
+        <p>(svg)<br /><img src="../imgs/img.svg" alt="a test svg image"></p>
+        <p id="demo"></p>
+        <p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==" alt="Red dot" /></p>
+        <p>Link to the <a href="folder/external.html">ext page</a></p>
+        <p>Link to the <a href="folder/external.html#top">top section</a></p>
+        <p>Link to the <a href="references/">references</a></p>
+        <p>Link to the <a href="references/#property">referenced property</a></p>
+        <p>Link to the <a href="references/private.html">private references</a></p>
+        <p>Link to the <a href="#title">this page</a></p>
+        </hr>
+        <p>External link: <a href="http://github.com/jmini">GitHub</a></p>
+        <p>External link: <a href="https://github.com/jmini">GitHub</a></p>
+        <p>Link to a file: <a href="file:///tmp/file.txt">file.txt</a></p>
+        <p>Mailto link: <a href="mailto:info@company.com">info@company.com</a></p>
+        <script>console.log("foo");</script>
+    </div>
+    <p>This is outside of the div</p>
+    <script>console.log("bar");</script>
 </body>
-
-<script>
-document.getElementById("demo").innerHTML = "Hello JavaScript!";
-</script>
 </html>

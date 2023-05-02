@@ -53,9 +53,19 @@ public class ConfigurationOptions {
     private boolean includeDefaultCss = true;
 
     /**
+     * Indicates if the original css files are included during publication of the complete site
+     */
+    private boolean includeOriginalCss = true;
+
+    /**
      * Indicates if the default javascript ('site.js') is included during publication of the complete site
      */
     private boolean includeDefaultJs = true;
+
+    /**
+     * Indicates if the default javascript files or snippets are included during publication of the complete site
+     */
+    private boolean includeOriginalJs = true;
 
     /**
      * Indicates if the table of content is created during publication of the complete site, note that the default javascript is also creating the table of content (see {@link #isIncludeDefaultJs()})
@@ -207,6 +217,19 @@ public class ConfigurationOptions {
         return this;
     }
 
+    public boolean isIncludeOriginalCss() {
+        return includeOriginalCss;
+    }
+
+    public void setIncludeOriginalCss(boolean includeOriginalCss) {
+        this.includeOriginalCss = includeOriginalCss;
+    }
+
+    public ConfigurationOptions includeOriginalCss(boolean isIncludeOriginalCss) {
+        setIncludeOriginalCss(isIncludeOriginalCss);
+        return this;
+    }
+
     public boolean isIncludeDefaultJs() {
         return includeDefaultJs;
     }
@@ -217,6 +240,19 @@ public class ConfigurationOptions {
 
     public ConfigurationOptions includeDefaultJs(boolean isIncludeDefaultJs) {
         setIncludeDefaultJs(isIncludeDefaultJs);
+        return this;
+    }
+
+    public boolean isIncludeOriginalJs() {
+        return includeOriginalJs;
+    }
+
+    public void setIncludeOriginalJs(boolean includeOriginalJs) {
+        this.includeOriginalJs = includeOriginalJs;
+    }
+
+    public ConfigurationOptions includeOriginalJs(boolean isIncludeOriginalJs) {
+        setIncludeOriginalJs(isIncludeOriginalJs);
         return this;
     }
 

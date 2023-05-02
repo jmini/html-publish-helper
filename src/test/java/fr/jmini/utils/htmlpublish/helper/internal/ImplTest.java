@@ -366,7 +366,7 @@ class ImplTest {
     }
 
     @Test
-    void testCase1ToCompleteSite() throws Exception {
+    void testCase1ToCompleteSiteWithoutSitePageSelector() throws Exception {
         Path outputFolder = Files.createTempDirectory("test")
                 .resolve("output");
 
@@ -376,14 +376,15 @@ class ImplTest {
                 .addPage(new ConfigurationPage()
                         .input(CASE1_FILE)
                         .title("Page")
-                        .output("page.html")
-                        .sitePageSelector("body"))
+                        .output("page.html"))
                 .options(new ConfigurationOptions()
                         .completeSite(true)
                         .createToc(true)
                         .linkToIndexHtmlStrategy(LinkToIndexHtmlStrategy.TO_FILE)
                         .includeDefaultCss(false)
                         .includeDefaultJs(false)
+                        .includeOriginalCss(true)
+                        .includeOriginalJs(true)
                         .resourcesRewriteStrategy(RewriteStrategy.SHORT_SHA1_SUFFIX)
                         .cssOutputFolder("static/css")
                         .javascriptOutputFolder("static/js")
@@ -410,8 +411,133 @@ class ImplTest {
 
         String content1 = Impl.readFile(page1File);
         assertThat(content1).isNotEmpty()
-                .doesNotContain("href=\"static/css/site.css\"") // include 'site.css'
-                .doesNotContain("src=\"assets/js/site.js\"") // include 'site.js'
+                .doesNotContain("href=\"static/css/site.css\"") // include 'site.css' (includeDefaultCss is false)
+                .doesNotContain("src=\"static/js/site.js\"") // include 'site.js' (includeDefaultCss is false)
+                .contains("href=\"static/css/file_f65f9d4.css\"") // include 'file.css' from the original document
+                .contains("src=\"static/js/empty_9f7f886.js\"") // include 'empty.js' from the original document
+                .contains("<p>This is outside of the div</p>") // because no 'sitePageSelector' is defined
+                .containsOnlyOnce("<script>console.log(\"foo\");</script>") // because no 'sitePageSelector' is defined (fallback to 'body'), the 'includeOriginalJs=true' should not add it again
+                .containsOnlyOnce("<script>console.log(\"bar\");</script>") // because no 'sitePageSelector' is defined (fallback to 'body'), the 'includeOriginalJs=true' should not add it again
+                .contains("<title>Page</title>")
+                .contains("<h1 class=\"page\">Page</h1>")
+                .contains("<a class=\"navbar-item\" href=\"page.html\">Page</a>")
+                .contains("<a class=\"home-link is-current\" href=\"page.html\"></a>")
+                .doesNotContain("<li><a href=\"page.html\">Page</a></li>") //breadcrumbs (not present because single page)
+                .doesNotContain("<span class=\"prev\">")
+                .doesNotContain("<span class=\"next\">");
+    }
+
+    @Test
+    void testCase1ToCompleteSiteWithOriginalAssets() throws Exception {
+        Path outputFolder = Files.createTempDirectory("test")
+                .resolve("output");
+
+        ConfigurationHolder config = new ConfigurationHolder()
+                .inputRootFolder(CASE1_FOLDER)
+                .outputRootFolder(outputFolder)
+                .addPage(new ConfigurationPage()
+                        .input(CASE1_FILE)
+                        .title("Page")
+                        .output("page.html")
+                        .sitePageSelector("div#content"))
+                .options(new ConfigurationOptions()
+                        .completeSite(true)
+                        .createToc(true)
+                        .linkToIndexHtmlStrategy(LinkToIndexHtmlStrategy.TO_FILE)
+                        .includeDefaultCss(false)
+                        .includeDefaultJs(false)
+                        .includeOriginalCss(true)
+                        .includeOriginalJs(true)
+                        .resourcesRewriteStrategy(RewriteStrategy.SHORT_SHA1_SUFFIX)
+                        .cssOutputFolder("static/css")
+                        .javascriptOutputFolder("static/js")
+                        .imagesOutputFolder("static/img"));
+
+        Impl.run(config);
+
+        // expected tree:
+        assertThat(renderFolder(outputFolder)).isEqualTo(""
+                + "output\n"
+                + "├──page.html\n"
+                + "└──static\n"
+                + "    ├──css\n"
+                + "    │   └──file_f65f9d4.css\n"
+                + "    ├──img\n"
+                + "    │   ├──image_482e919.png\n"
+                + "    │   └──img_4eacad7.svg\n"
+                + "    └──js\n"
+                + "        └──empty_9f7f886.js\n");
+
+        assertThat(outputFolder).isDirectory();
+        Path page1File = outputFolder.resolve("page.html");
+        assertThat(page1File).isRegularFile();
+
+        String content1 = Impl.readFile(page1File);
+        assertThat(content1).isNotEmpty()
+                .doesNotContain("href=\"static/css/site.css\"") // include 'site.css' (includeDefaultCss is false)
+                .doesNotContain("src=\"static/js/site.js\"") // include 'site.js' (includeDefaultCss is false)
+                .contains("href=\"static/css/file_f65f9d4.css\"") // include 'file.css' from the original document
+                .contains("src=\"static/js/empty_9f7f886.js\"") // include 'empty.js' from the original document
+                .containsOnlyOnce("<script>console.log(\"foo\");</script>") // because inside selected div with 'sitePageSelector' and the 'includeOriginalJs=true' should not add it again
+                .containsOnlyOnce("<script>console.log(\"bar\");</script>") // because 'includeOriginalJs' is true
+                .doesNotContain("<p>This is outside of the div</p>") // because no 'sitePageSelector' selects a specific div
+                .contains("<title>Page</title>")
+                .contains("<h1 class=\"page\">Page</h1>")
+                .contains("<a class=\"navbar-item\" href=\"page.html\">Page</a>")
+                .contains("<a class=\"home-link is-current\" href=\"page.html\"></a>")
+                .doesNotContain("<li><a href=\"page.html\">Page</a></li>") //breadcrumbs (not present because single page)
+                .doesNotContain("<span class=\"prev\">")
+                .doesNotContain("<span class=\"next\">");
+    }
+
+    @Test
+    void testCase1ToCompleteSiteWithoutOriginalAssets() throws Exception {
+        Path outputFolder = Files.createTempDirectory("test")
+                .resolve("output");
+
+        ConfigurationHolder config = new ConfigurationHolder()
+                .inputRootFolder(CASE1_FOLDER)
+                .outputRootFolder(outputFolder)
+                .addPage(new ConfigurationPage()
+                        .input(CASE1_FILE)
+                        .title("Page")
+                        .output("page.html")
+                        .sitePageSelector("div#content"))
+                .options(new ConfigurationOptions()
+                        .completeSite(true)
+                        .createToc(true)
+                        .linkToIndexHtmlStrategy(LinkToIndexHtmlStrategy.TO_FILE)
+                        .includeDefaultCss(false)
+                        .includeDefaultJs(false)
+                        .includeOriginalCss(false)
+                        .includeOriginalJs(false)
+                        .resourcesRewriteStrategy(RewriteStrategy.SHORT_SHA1_SUFFIX)
+                        .cssOutputFolder("static/css")
+                        .javascriptOutputFolder("static/js")
+                        .imagesOutputFolder("static/img"));
+
+        Impl.run(config);
+
+        // expected tree:
+        assertThat(renderFolder(outputFolder)).isEqualTo(""
+                + "output\n"
+                + "├──page.html\n"
+                + "└──static\n"
+                + "    └──img\n"
+                + "        ├──image_482e919.png\n"
+                + "        └──img_4eacad7.svg\n");
+
+        assertThat(outputFolder).isDirectory();
+        Path page1File = outputFolder.resolve("page.html");
+        assertThat(page1File).isRegularFile();
+
+        String content1 = Impl.readFile(page1File);
+        assertThat(content1).isNotEmpty()
+                .doesNotContain("href=\"static/css/") // do not include any css (both 'includeDefaultCss' and 'includeOriginalCss' are false)
+                .doesNotContain("src=\"assets/js/") // do not include any js (both 'includeDefaultJs' and 'includeOriginalJs' are false)
+                .doesNotContain("<p>This is outside of the div</p>") // because 'sitePageSelector' selects 'div#content'
+                .contains("<script>console.log(\"foo\");</script>") // because 'sitePageSelector' selects 'div#content'
+                .doesNotContain("<script>console.log(\"bar\");</script>") // because 'sitePageSelector' selects 'div#content' and 'includeOriginalJs' is false
                 .contains("<title>Page</title>")
                 .contains("<h1 class=\"page\">Page</h1>")
                 .contains("<a class=\"navbar-item\" href=\"page.html\">Page</a>")
