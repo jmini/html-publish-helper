@@ -1158,6 +1158,12 @@ class ImplTest {
                         .indexHandling(IndexHandling.USE_PAGE_AS_PARENT)
                         .title("CHAPTER 2")
                         .includeChildFolders(true))
+                .addPage(new ConfigurationPage()
+                        .title("CHAPTER 3")
+                        .addChild(new ConfigurationPage().input(CASE3_TWO)
+                                .output("chapter3/p2.html"))
+                        .addChild(new ConfigurationPage().input(CASE3_THREE)
+                                .output("chapter3/p3.html")))
                 .defaultPageOptions(new ConfigurationPageOptions()
                         .sitePageSelector("div.sect1"))
                 .options(new ConfigurationOptions().completeSite(true)
@@ -1183,6 +1189,9 @@ class ImplTest {
                 + "│   │   └──index.html\n"
                 + "│   └──sub-b\n"
                 + "│       └──index.html\n"
+                + "├──chapter3\n"
+                + "│   ├──p2.html\n"
+                + "│   └──p3.html\n"
                 + "├──css\n"
                 + "│   └──site_22ae394.css\n"
                 + "├──font\n"
@@ -1217,6 +1226,8 @@ class ImplTest {
                 + CASE3_CHAPTER2_INDEX + "\n"
                 + CASE3_CHAPTER2_SUB_A + "\n"
                 + CASE3_CHAPTER2_SUB_B + "\n"
+                + "chapter3/p2.html" + "\n"
+                + "chapter3/p3.html" + "\n"
                 + CASE3_ONE);
 
         assertThat(outputFolder).isDirectory();
@@ -1236,6 +1247,10 @@ class ImplTest {
         assertThat(chapter2SubA).isRegularFile();
         Path chapter2SubB = outputFolder.resolve(CASE3_CHAPTER2_SUB_B);
         assertThat(chapter2SubB).isRegularFile();
+        Path chapter3p2 = outputFolder.resolve("chapter3/p2.html");
+        assertThat(chapter3p2).isRegularFile();
+        Path chapter3p3 = outputFolder.resolve("chapter3/p3.html");
+        assertThat(chapter3p3).isRegularFile();
 
         Path css = outputFolder.resolve("css");
         String cssContent = Impl.readFile(css.resolve("site_22ae394.css"));
@@ -1271,6 +1286,7 @@ class ImplTest {
                 .contains("<li class=\"nav-item is-active is-current-page\" data-depth=\"0\"><a class=\"nav-link\" href=\"one.html\">Page - One</a></li>") //nav-list
                 .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 1</span>") //nav-list
                 .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"chapter2/index.html\">CHAPTER 2</a>") //nav-list
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 3</span>") // nav-list
                 .contains("<footer class=\"footer\">") //footer
                 .contains("<p></p>") //footer
         ;
@@ -1291,7 +1307,8 @@ class ImplTest {
                 .contains("<li class=\"nav-item is-active is-current-path\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 1</span>") //nav-list
                 .contains("<li class=\"nav-item is-active is-current-page\" data-depth=\"1\"><a class=\"nav-link\" href=\"index.html\">Chapter 1</a></li>") //nav-list
                 .contains("<li class=\"nav-item\" data-depth=\"1\"><a class=\"nav-link\" href=\"sec5.html\">Chapter 1 - section 5</a></li>\n") //nav-list
-                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"../chapter2/index.html\">CHAPTER 2</a>"); //nav-list;
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"../chapter2/index.html\">CHAPTER 2</a>") //nav-list
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 3</span>"); // nav-list
 
         String content3 = Impl.readFile(chapter1Sec5File);
         assertThat(content3).isNotEmpty()
@@ -1309,7 +1326,8 @@ class ImplTest {
                 .contains("<li class=\"nav-item is-active is-current-path\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 1</span>") //nav-list
                 .contains("<li class=\"nav-item\" data-depth=\"1\"><a class=\"nav-link\" href=\"index.html\">Chapter 1</a></li>") //nav-list
                 .contains("<li class=\"nav-item is-active is-current-page\" data-depth=\"1\"><a class=\"nav-link\" href=\"sec5.html\">Chapter 1 - section 5</a></li>\n") //nav-list
-                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"../chapter2/index.html\">CHAPTER 2</a>"); //nav-list;
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"../chapter2/index.html\">CHAPTER 2</a>") //nav-list;
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 3</span>"); // nav-list
 
         String content4 = Impl.readFile(chapter1Sec10File);
         assertThat(content4).isNotEmpty()
@@ -1369,6 +1387,40 @@ class ImplTest {
                 .contains("<li><a href=\"../index.html\">CHAPTER 2</a></li>") //breadcrumbs
                 .contains("<li><a href=\"index.html\">Article B</a></li>") //breadcrumbs
                 .contains("<span class=\"prev\"><a href=\"../sub-a/index.html\">Article A</a></span>")
+                .contains("<span class=\"next\"><a href=\"../../chapter3/p2.html\">Page - Two</a></span>");
+
+        String content9 = Impl.readFile(chapter3p2);
+        assertThat(content9).isNotEmpty()
+                .contains("<link rel=\"stylesheet\" href=\"../css/site_22ae394.css\">") // include 'site.css'
+                .contains("<script src=\"../js/site_99eac35.js\"></script>") // include 'site.js'
+                .contains("<title>Page - Two</title>")
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><a class=\"nav-link\" href=\"../one.html\">Page - One</a></li>") //nav-list
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 1</span>") //nav-list
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"../chapter2/index.html\">CHAPTER 2</a>") //nav-list
+                .contains("<li class=\"nav-item is-active is-current-path\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 3</span>") // nav-list
+                .contains("<li class=\"nav-item is-active is-current-page\" data-depth=\"1\"><a class=\"nav-link\" href=\"p2.html\">Page - Two</a></li>") // nav-list
+                .contains("<li class=\"nav-item\" data-depth=\"1\"><a class=\"nav-link\" href=\"p3.html\">Page - Three</a></li>") // nav-list
+                .contains("<a class=\"home-link\" href=\"../chapter1/index.html\"></a>")
+                .contains("<li>CHAPTER 3</li>") //breadcrumbs
+                .contains("<li><a href=\"p2.html\">Page - Two</a></li>") //breadcrumbs
+                .contains("<span class=\"prev\"><a href=\"../chapter2/sub-b/index.html\">Article B</a></span>")
+                .contains("<span class=\"next\"><a href=\"p3.html\">Page - Three</a></span>");
+
+        String content10 = Impl.readFile(chapter3p3);
+        assertThat(content10).isNotEmpty()
+                .contains("<link rel=\"stylesheet\" href=\"../css/site_22ae394.css\">") // include 'site.css'
+                .contains("<script src=\"../js/site_99eac35.js\"></script>") // include 'site.js'
+                .contains("<title>Page - Three</title>")
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><a class=\"nav-link\" href=\"../one.html\">Page - One</a></li>") //nav-list
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 1</span>") //nav-list
+                .contains("<li class=\"nav-item\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><a class=\"nav-link\" href=\"../chapter2/index.html\">CHAPTER 2</a>") //nav-list
+                .contains("<li class=\"nav-item is-active is-current-path\" data-depth=\"0\"><button class=\"nav-item-toggle\"></button><span class=\"nav-text\">CHAPTER 3</span>") // nav-list
+                .contains("<li class=\"nav-item\" data-depth=\"1\"><a class=\"nav-link\" href=\"p2.html\">Page - Two</a></li>") // nav-list
+                .contains("<li class=\"nav-item is-active is-current-page\" data-depth=\"1\"><a class=\"nav-link\" href=\"p3.html\">Page - Three</a></li>") // nav-list
+                .contains("<a class=\"home-link\" href=\"../chapter1/index.html\"></a>")
+                .contains("<li>CHAPTER 3</li>") //breadcrumbs
+                .contains("<li><a href=\"p3.html\">Page - Three</a></li>") //breadcrumbs
+                .contains("<span class=\"prev\"><a href=\"p2.html\">Page - Two</a></span>")
                 .doesNotContain("<span class=\"next\">");
     }
 
