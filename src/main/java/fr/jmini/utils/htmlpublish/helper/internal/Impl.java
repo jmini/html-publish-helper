@@ -749,12 +749,12 @@ public class Impl {
     }
 
     private static String calculateState(PageHolder page, PageHolder current) {
-        if (Objects.equals(page.getOutputFile(), current.getOutputFile())) {
+        if (Objects.equals(page, current)) {
             return "is-current-page";
         }
         PageHolder parent = current.getParent();
         while (parent != null) {
-            if (Objects.equals(page.getOutputFile(), parent.getOutputFile())) {
+            if (Objects.equals(page, parent)) {
                 return "is-current-path";
             }
             parent = parent.getParent();
